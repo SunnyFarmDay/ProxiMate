@@ -16,13 +16,10 @@ COPY . .
 
 # Build web app with optimizations
 # --release: Production build with minification
-# --web-renderer canvaskit: Better performance and consistency
-# --dart-define=FLUTTER_WEB_USE_SKIA=true: Use Skia for rendering
+# --wasm: Use WebAssembly for better performance (Flutter 3.22+)
 RUN flutter build web \
     --release \
-    --web-renderer canvaskit \
-    --dart-define=FLUTTER_WEB_USE_SKIA=true \
-    --dart-define=FLUTTER_WEB_CANVASKIT_URL=/canvaskit/
+    --wasm
 
 # Stage 2: Serve with nginx (minimal image)
 FROM nginx:alpine
