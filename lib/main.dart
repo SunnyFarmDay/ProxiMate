@@ -2,18 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/storage_service.dart';
 import 'screens/register_screen.dart';
+import 'screens/main_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Create storage service and load persisted data
+  final storage = StorageService();
+  await storage.loadUserProfile();
+  
+  runApp(MyApp(storage: storage));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final StorageService storage;
+  
+  const MyApp({super.key, required this.storage});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => StorageService(),
+    return ChangeNotifierProvider.value(
+      value: storage,
       child: MaterialApp(
         title: 'Profile App',
         debugShowCheckedModeBanner: false,
@@ -46,7 +55,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const RegisterScreen(),
+        home: storage.hasUser ? const MainScreen() : const RegisterScreen(),
       ),
     );
   }

@@ -4,17 +4,16 @@ import '../services/storage_service.dart';
 import '../config/profile_config.dart';
 import '../widgets/tag_selector.dart';
 import '../widgets/profile_image_picker.dart';
-import 'main_screen.dart';
 
-/// Profile setup screen where user enters additional information
-class ProfileSetupScreen extends StatefulWidget {
-  const ProfileSetupScreen({super.key});
+/// Edit profile screen where user can update their information
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key});
 
   @override
-  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _schoolController = TextEditingController();
   final _backgroundController = TextEditingController();
@@ -22,6 +21,39 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   List<String> _selectedMajors = [];
   List<String> _selectedInterests = [];
   String? _profileImagePath;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentProfile();
+  }
+
+  void _loadCurrentProfile() {
+    final profile = context.read<StorageService>().userProfile;
+    if (profile != null) {
+      _schoolController.text = profile.school ?? '';
+      _backgroundController.text = profile.background ?? '';
+      _profileImagePath = profile.profileImagePath;
+      
+      // Parse comma-separated majors and interests
+      if (profile.major != null && profile.major!.isNotEmpty) {
+        _selectedMajors = profile.major!
+            .split(',')
+            .map((m) => m.trim())
+            .where((m) => m.isNotEmpty)
+            .toList();
+      }
+      
+      if (profile.interests != null && profile.interests!.isNotEmpty) {
+        _selectedInterests = profile.interests!
+            .split(',')
+            .map((i) => i.trim())
+            .where((i) => i.isNotEmpty)
+            .toList();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -53,21 +85,40 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         return;
       }
 
-      final storageService = context.read<StorageService>();
-      await storageService.updateProfile(
-        school: _schoolController.text.trim(),
-        major: _selectedMajors.join(', '),
-        interests: _selectedInterests.join(', '),
-        background: _backgroundController.text.trim(),
-        profileImagePath: _profileImagePath,
-      );
+      setState(() => _isLoading = true);
 
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const MainScreen(),
-          ),
+      try {
+        final storageService = context.read<StorageService>();
+        await storageService.updateProfile(
+          school: _schoolController.text.trim(),
+          major: _selectedMajors.join(', '),
+          interests: _selectedInterests.join(', '),
+          background: _backgroundController.text.trim(),
+          profileImagePath: _profileImagePath,
         );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update profile: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -78,8 +129,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile Setup'),
-        automaticallyImplyLeading: false,
+        title: const Text('Edit Profile'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -97,7 +151,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tell us more about yourself',
+                  'Update your profile information',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -107,11 +161,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   child: ProfileImagePicker(
                     currentImagePath: _profileImagePath,
                     onImageSelected: (path) {
-                      debugPrint('ProfileSetupScreen - Image selected: $path');
+                      debugPrint('EditProfileScreen - Image selected: $path');
                       setState(() {
                         _profileImagePath = path;
                       });
-                      debugPrint('ProfileSetupScreen - State updated with path: $_profileImagePath');
+                      debugPrint('EditProfileScreen - State updated with path: $_profileImagePath');
                     },
                     radius: 60,
                   ),
@@ -181,17 +235,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _handleSaveProfile,
+                  onPressed: _isLoading ? null : _handleSaveProfile,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'Complete Profile',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
               ],
             ),

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
 import '../screens/register_screen.dart';
+import '../screens/edit_profile_screen.dart';
 
 /// Profile tab widget displaying user information
 class ProfileTab extends StatelessWidget {
@@ -16,6 +18,11 @@ class ProfileTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            tooltip: 'Edit Profile',
+            onPressed: () => _handleEditProfile(context),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
@@ -36,14 +43,19 @@ class ProfileTab extends StatelessWidget {
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: Theme.of(context).primaryColor,
-                          child: Text(
-                            profile.userName[0].toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                          backgroundImage: profile.profileImagePath != null
+                              ? FileImage(File(profile.profileImagePath!))
+                              : null,
+                          child: profile.profileImagePath == null
+                              ? Text(
+                                  profile.userName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -133,6 +145,14 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
+  void _handleEditProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const EditProfileScreen(),
+      ),
+    );
+  }
+
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -145,14 +165,16 @@ class ProfileTab extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              context.read<StorageService>().clearProfile();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => const RegisterScreen(),
-                ),
-                (route) => false,
-              );
+            onPressed: () async {
+              await context.read<StorageService>().logout();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterScreen(),
+                  ),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Logout'),
           ),

@@ -5,6 +5,7 @@ class UserProfile {
   final String? major;
   final String? interests;
   final String? background;
+  final String? profileImagePath;
 
   UserProfile({
     required this.userName,
@@ -12,6 +13,7 @@ class UserProfile {
     this.major,
     this.interests,
     this.background,
+    this.profileImagePath,
   });
 
   /// Create a copy of the profile with updated fields
@@ -21,6 +23,7 @@ class UserProfile {
     String? major,
     String? interests,
     String? background,
+    String? profileImagePath,
   }) {
     return UserProfile(
       userName: userName ?? this.userName,
@@ -28,6 +31,7 @@ class UserProfile {
       major: major ?? this.major,
       interests: interests ?? this.interests,
       background: background ?? this.background,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
     );
   }
 
@@ -39,6 +43,7 @@ class UserProfile {
       'major': major,
       'interests': interests,
       'background': background,
+      'profileImagePath': profileImagePath,
     };
   }
 
@@ -50,6 +55,7 @@ class UserProfile {
       major: json['major'] as String?,
       interests: json['interests'] as String?,
       background: json['background'] as String?,
+      profileImagePath: json['profileImagePath'] as String?,
     );
   }
 }

@@ -263,13 +263,17 @@ class ActivityInvitationsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Show Chat button only if chat HAS been opened
-                if (invitation.chatOpened)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final chatRoom =
-                          storage.getChatRoomByPeerId(invitation.peerId);
-                      if (chatRoom != null && context.mounted) {
+                // Chat button in top right corner
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final chatRoom =
+                        storage.getChatRoomByPeerId(invitation.peerId);
+                    if (chatRoom != null) {
+                      // Mark chat as opened if not already
+                      if (!invitation.chatOpened) {
+                        await storage.markChatOpened(invitation.id);
+                      }
+                      if (context.mounted) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -278,13 +282,14 @@ class ActivityInvitationsScreen extends StatelessWidget {
                           ),
                         );
                       }
-                    },
-                    icon: const Icon(Icons.chat, size: 18),
-                    label: const Text('Chat'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
+                    }
+                  },
+                  icon: const Icon(Icons.chat, size: 18),
+                  label: const Text('Chat'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
                   ),
+                ),
               ],
             ),
             
@@ -358,43 +363,11 @@ class ActivityInvitationsScreen extends StatelessWidget {
               }).toList(),
             ],
             
-            // Action buttons at bottom
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 12),
-            
-            // Chat for Meetup button - show only when chat NOT opened yet
-            if (!invitation.chatOpened)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final chatRoom =
-                        storage.getChatRoomByPeerId(invitation.peerId);
-                    if (chatRoom != null) {
-                      // Mark chat as opened
-                      await storage.markChatOpened(invitation.id);
-                      if (context.mounted) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ChatRoomScreen(chatRoom: chatRoom),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.chat_bubble, size: 18),
-                  label: const Text('Chat for Meetup'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                ),
-              ),
-            
-            // Not Good Match and Collect Name Card - show only after chat opened
+            // Action buttons at bottom (only show after chat opened)
             if (invitation.chatOpened) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
               // Not Good Match button (full width)
               SizedBox(
                 width: double.infinity,

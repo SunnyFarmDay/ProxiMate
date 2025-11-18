@@ -1,13 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/user_profile.dart';
 import '../models/peer.dart';
 import '../models/meeting.dart';
 import '../models/name_card.dart';
 import '../models/activity.dart';
 
-/// Simple in-memory storage service for user profile
-/// In production, this would use shared_preferences or a database
+/// Storage service with persistent data using shared_preferences
 class StorageService extends ChangeNotifier {
+  static const String _keyUserProfile = 'user_profile';
   UserProfile? _userProfile;
   List<Peer> _nearbyPeers = [];
   List<Invitation> _invitations = [];
@@ -52,9 +54,49 @@ class StorageService extends ChangeNotifier {
   List<Invitation> get pendingInvitations =>
       _invitations.where((i) => i.isPending).toList();
 
+  /// Load user profile from persistent storage
+  Future<void> loadUserProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profileJson = prefs.getString(_keyUserProfile);
+      
+      if (profileJson != null) {
+        final profileMap = jsonDecode(profileJson) as Map<String, dynamic>;
+        _userProfile = UserProfile.fromJson(profileMap);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
+  }
+
+  /// Save user profile to persistent storage
+  Future<void> _persistUserProfile() async {
+    try {
+      if (_userProfile == null) return;
+      
+      final prefs = await SharedPreferences.getInstance();
+      final profileJson = jsonEncode(_userProfile!.toJson());
+      await prefs.setString(_keyUserProfile, profileJson);
+    } catch (e) {
+      debugPrint('Error saving user profile: $e');
+    }
+  }
+
+  /// Clear persisted user profile
+  Future<void> _clearPersistedProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyUserProfile);
+    } catch (e) {
+      debugPrint('Error clearing user profile: $e');
+    }
+  }
+
   /// Save user name (registration step)
   Future<void> saveUserName(String userName) async {
     _userProfile = UserProfile(userName: userName);
+    await _persistUserProfile();
     notifyListeners();
   }
 
@@ -64,6 +106,7 @@ class StorageService extends ChangeNotifier {
     String? major,
     String? interests,
     String? background,
+    String? profileImagePath,
   }) async {
     if (_userProfile == null) return;
 
@@ -72,12 +115,14 @@ class StorageService extends ChangeNotifier {
       major: major,
       interests: interests,
       background: background,
+      profileImagePath: profileImagePath,
     );
+    await _persistUserProfile();
     notifyListeners();
   }
 
-  /// Clear all data
-  void clearProfile() {
+  /// Clear all data (for logout)
+  Future<void> clearProfile() async {
     _userProfile = null;
     _nearbyPeers = [];
     _invitations = [];
@@ -86,7 +131,13 @@ class StorageService extends ChangeNotifier {
     _activities = [];
     _selectedPeer = null;
     _selectedActivityId = null;
+    await _clearPersistedProfile();
     notifyListeners();
+  }
+
+  /// Logout user and clear all data
+  Future<void> logout() async {
+    await clearProfile();
   }
 
   /// Create a new activity
