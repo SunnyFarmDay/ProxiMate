@@ -63,14 +63,13 @@ class NetworkGraphWidget extends StatefulWidget {
   State<NetworkGraphWidget> createState() => _NetworkGraphWidgetState();
 }
 
-class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
+class _NetworkGraphWidgetState extends State<NetworkGraphWidget> {
   NetworkNode? _selectedNode;
   double _scale = 1.0;
   Offset _panOffset = Offset.zero;
   Offset _lastFocalPoint = Offset.zero;
-  bool _hideNoCommonInterests = false;
+  bool _highlightCommonInterests = false;
+  Size? _viewportSize;
 
   // Physics simulation parameters
   static const double nodeRadius = 30.0;
@@ -78,11 +77,6 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 16),
-    );
-    // Physics disabled for better performance
     
     // Set initial selected node if provided
     if (widget.initialSelectedNodeId != null) {
@@ -93,9 +87,27 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
     }
   }
 
+  void _ensureNodesInViewport() {
+    if (_viewportSize == null) return;
+    
+    final margin = nodeRadius * 2;
+    
+    for (final node in widget.nodes) {
+      if (node.isTextNode) continue;
+      
+      // Clamp node positions to viewport bounds
+      final clampedX = node.position.dx.clamp(margin, _viewportSize!.width - margin);
+      final clampedY = node.position.dy.clamp(margin, _viewportSize!.height - margin);
+      
+      // Only update if outside bounds
+      if (node.position.dx != clampedX || node.position.dy != clampedY) {
+        node.position = Offset(clampedX, clampedY);
+      }
+    }
+  }
+
   @override
   void dispose() {
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -148,20 +160,20 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Filter extended connections by common interests',
+                'Highlight extended connections with common interests',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Filter Common Tags Only'),
+                title: const Text('Highlight Common Tags'),
                 subtitle: const Text(
-                  'Hide connections with no shared major or interests',
+                  'Show full opacity for connections with shared major or interests',
                   style: TextStyle(fontSize: 12),
                 ),
-                value: _hideNoCommonInterests,
+                value: _highlightCommonInterests,
                 onChanged: (bool value) {
                   setState(() {
-                    _hideNoCommonInterests = value;
+                    _highlightCommonInterests = value;
                   });
                   Navigator.pop(context);
                 },
@@ -182,8 +194,9 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
   void _onNodePanUpdate(NetworkNode node, DragUpdateDetails details, double offset) {
     if (!mounted) return;
     setState(() {
-      // Use delta for smooth incremental updates instead of recalculating position
-      node.position += details.delta / _scale;
+      // Use delta for smooth incremental updates
+      // Don't divide by scale since gesture detector is already inside Transform.scale
+      node.position += details.delta;
       node.velocity = Offset.zero;
     });
   }
@@ -212,11 +225,20 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Filter nodes based on common interests setting
-    final visibleNodes = _hideNoCommonInterests
-        ? widget.nodes.where((node) => _hasCommonInterests(node)).toList()
-        : widget.nodes;
-
+    // Capture viewport size for physics
+    final size = MediaQuery.of(context).size;
+    if (_viewportSize != size) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _viewportSize != size) {
+          _viewportSize = size;
+          _ensureNodesInViewport();
+          if (mounted) {
+            setState(() {});
+          }
+        }
+      });
+    }
+    
     return GestureDetector(
       onScaleStart: _onScaleStart,
       onScaleUpdate: _onScaleUpdate,
@@ -242,12 +264,12 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
                 child: SizedBox.expand(
                   child: CustomPaint(
                     painter: NetworkGraphPainter(
-                      nodes: visibleNodes,
+                      nodes: widget.nodes,
                       selectedNode: _selectedNode,
                     ),
                     child: Stack(
                       clipBehavior: Clip.none,
-                      children: visibleNodes.map((node) {
+                      children: widget.nodes.map((node) {
                         final isSelected = _selectedNode?.id == node.id;
                         final isYou = widget.currentUserId != null && node.id == widget.currentUserId;
                         final baseSize = isYou ? nodeRadius * 2.6 : nodeRadius * 2;
@@ -336,9 +358,22 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
     final isYou = widget.currentUserId != null && node.id == widget.currentUserId;
     final baseSize = isYou ? nodeRadius * 2.6 : nodeRadius * 2;
     final size = isSelected ? baseSize * 1.2 : baseSize;
-    final double opacity = node.isDirectConnection 
-        ? 1.0 
-        : (node.depth != null && node.depth! >= 2 ? 0.25 : 0.4);
+    
+    // Calculate opacity based on filter state and common interests
+    final hasCommonTags = _hasCommonInterests(node);
+    double opacity;
+    if (node.isDirectConnection) {
+      opacity = 1.0;
+    } else if (_highlightCommonInterests) {
+      // When filter is on, full opacity for common interests, reduced for others
+      opacity = hasCommonTags ? 1.0 : (node.depth != null && node.depth! >= 2 ? 0.25 : 0.4);
+    } else {
+      // Default opacity based on depth
+      opacity = node.depth != null && node.depth! >= 2 ? 0.25 : 0.4;
+    }
+
+    // Determine if node should have green outline (non-direct connection with common tags)
+    final bool hasGreenOutline = !node.isDirectConnection && hasCommonTags;
 
     return Opacity(
       opacity: opacity,
@@ -353,14 +388,16 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
                 ? Colors.white
                 : isYou
                     ? Colors.white.withOpacity(0.8)
-                    : Colors.white.withOpacity(0.3),
-            width: isSelected ? 3 : (isYou ? 3 : 2),
+                    : hasGreenOutline
+                        ? Colors.green
+                        : Colors.white.withOpacity(0.3),
+            width: isSelected ? 3 : (isYou ? 3 : (hasGreenOutline ? 2.5 : 2)),
           ),
           boxShadow: [
             BoxShadow(
-              color: node.color.withOpacity(0.5),
-              blurRadius: isSelected ? 20 : (isYou ? 15 : 10),
-              spreadRadius: isSelected ? 5 : (isYou ? 4 : 2),
+              color: hasGreenOutline ? Colors.green.withOpacity(0.6) : node.color.withOpacity(0.5),
+              blurRadius: isSelected ? 20 : (isYou ? 15 : (hasGreenOutline ? 12 : 10)),
+              spreadRadius: isSelected ? 5 : (isYou ? 4 : (hasGreenOutline ? 3 : 2)),
             ),
           ],
         ),
@@ -418,8 +455,8 @@ class _NetworkGraphWidgetState extends State<NetworkGraphWidget>
           children: [
             IconButton(
               icon: Icon(
-                _hideNoCommonInterests ? Icons.filter_alt : Icons.filter_alt_outlined,
-                color: _hideNoCommonInterests ? Colors.green : Colors.white,
+                _highlightCommonInterests ? Icons.filter_alt : Icons.filter_alt_outlined,
+                color: _highlightCommonInterests ? Colors.green : Colors.white,
               ),
               onPressed: _showFilterDialog,
               tooltip: 'Filter Network',

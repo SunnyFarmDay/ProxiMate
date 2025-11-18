@@ -703,8 +703,8 @@ class StorageService extends ChangeNotifier {
 
   /// Generate ice-breaking questions based on peer's profile
   List<IceBreaker> _generateIceBreakers(Peer peer) {
-    final allQuestions = [
-      // Interest-based questions
+    // Common interests questions (always included)
+    final commonInterestQuestions = [
       IceBreaker(
         question: 'What inspired you to study ${peer.major}?',
         answer: 'This helps you understand their passion and motivation',
@@ -717,6 +717,10 @@ class StorageService extends ChangeNotifier {
         question: 'What\'s your favorite thing about ${peer.school}?',
         answer: 'A great way to share common experiences',
       ),
+    ];
+
+    // Other diverse questions (for random selection)
+    final otherQuestions = [
       // Values and personal philosophy
       IceBreaker(
         question: 'What\'s a core value or principle that guides your decisions?',
@@ -770,10 +774,13 @@ class StorageService extends ChangeNotifier {
       ),
     ];
 
-    // Randomly select 2 questions
+    // Randomly select 2 questions from other questions
     final random = Random();
-    final shuffled = List<IceBreaker>.from(allQuestions)..shuffle(random);
-    return shuffled.take(2).toList();
+    final shuffledOther = List<IceBreaker>.from(otherQuestions)..shuffle(random);
+    final selectedOther = shuffledOther.take(2).toList();
+
+    // Combine common interest questions with randomly selected questions
+    return [...commonInterestQuestions, ...selectedOther];
   }
 
   /// Accept an invitation (max 1 per activity)
