@@ -277,7 +277,7 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: _isCustom ? Colors.blue : Colors.transparent,
+          color: _isCustom ? Theme.of(context).colorScheme.primary : Colors.transparent,
           width: 2,
         ),
       ),
@@ -291,12 +291,12 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.edit_location_alt,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 32,
                   ),
                 ),
@@ -310,9 +310,9 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
                   ),
                 ),
                 if (_isCustom)
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                     size: 28,
                   ),
               ],

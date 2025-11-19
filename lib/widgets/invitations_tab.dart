@@ -150,12 +150,12 @@ class InvitationsTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.local_activity,
-                        color: Colors.blue,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 32,
                       ),
                     ),
