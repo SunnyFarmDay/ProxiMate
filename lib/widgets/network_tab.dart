@@ -66,7 +66,7 @@ class _NetworkTabState extends State<NetworkTab> {
       school: currentProfile.school ?? '',
       major: currentProfile.major,
       interests: currentProfile.interests,
-      color: Colors.blue,
+      color: Theme.of(context).colorScheme.primary,
       position: Offset(size.width * 0.5, size.height * 0.5),
       connections: connections.map((c) => c.toProfileId).toList(),
       profileImagePath: currentProfile.profileImagePath,
@@ -455,7 +455,7 @@ class _NetworkTabState extends State<NetworkTab> {
                   Icons.school,
                   'School',
                   profile.school!,
-                  Colors.blue,
+                  Theme.of(context).colorScheme.primary,
                 ),
               if (profile.school != null) const SizedBox(height: 16),
               if (profile.major != null)
@@ -556,7 +556,7 @@ class _NetworkTabState extends State<NetworkTab> {
                   Icons.school,
                   'School',
                   profile.school!,
-                  Colors.blue,
+                  Theme.of(context).colorScheme.primary,
                 ),
               if (profile.school != null) const SizedBox(height: 16),
               if (profile.major != null)
@@ -787,7 +787,7 @@ class _NetworkTabState extends State<NetworkTab> {
               if (profile.interests != null)
                 Row(
                   children: [
-                    Icon(Icons.interests, size: 16, color: Colors.blue[700]),
+                    Icon(Icons.interests, size: 16, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

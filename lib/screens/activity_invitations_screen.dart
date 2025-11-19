@@ -99,7 +99,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               children: [
                 CircleAvatar(
                   radius: 32,
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   child: Text(
                     peer.name[0].toUpperCase(),
                     style: const TextStyle(
@@ -237,19 +237,19 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue[700]),
+                  Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       widget.activity.description,
                       style: TextStyle(
-                        color: Colors.blue[900],
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -328,7 +328,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                 context,
                 'Sent Invitations',
                 Icons.send,
-                Colors.blue,
+                Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(height: 12),
               ...sentInvitations.map(

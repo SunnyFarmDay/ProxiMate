@@ -77,20 +77,20 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.blue, width: 2),
+                          border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.location_on,
-                                color: Colors.blue, size: 20),
+                            Icon(Icons.location_on,
+                                color: Theme.of(context).colorScheme.primary, size: 20),
                             const SizedBox(width: 4),
                             Text(
                               '${widget.peer.distance.toStringAsFixed(1)} km',
-                              style: const TextStyle(
-                                color: Colors.blue,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
