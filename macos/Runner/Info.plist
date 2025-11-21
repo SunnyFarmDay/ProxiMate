@@ -28,5 +28,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to find nearby peers and provide location-based features.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to find nearby peers even when app is in background.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>This app uses location services to find nearby peers and provide location-based features.</string>
 </dict>
 </plist>
