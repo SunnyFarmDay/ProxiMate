@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
+import '../services/storage_service_wrapper.dart';
 import '../config/profile_config.dart';
 import '../widgets/tag_selector.dart';
 import '../widgets/profile_image_picker.dart';
@@ -54,8 +55,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         return;
       }
 
-      final storageService = context.read<StorageService>();
-      await storageService.updateProfile(
+      final wrapper = StorageServiceWrapper(context);
+      final success = await wrapper.updateProfile(
         school: _schoolController.text.trim(),
         major: _selectedMajors.join(', '),
         interests: _selectedInterests.join(', '),
@@ -63,7 +64,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         profileImagePath: _profileImagePath,
       );
 
-      if (mounted) {
+      if (success && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => const MainScreen(),

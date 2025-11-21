@@ -8,12 +8,16 @@ import '../models/meeting.dart';
 import '../models/connection.dart';
 import '../models/activity.dart';
 import '../models/user_rating.dart';
+import 'api_service.dart';
 
-/// Storage service with persistent data using shared_preferences
+/// Storage service with persistent data using shared_preferences and API integration
 class StorageService extends ChangeNotifier {
   static const String _keyCurrentProfile = 'current_profile';
   static const String _keyConnections = 'connections';
   static const String _keyProfiles = 'profiles';
+  static const String _keyApiUserId = 'api_user_id';
+  
+  final ApiService _apiService = ApiService();
   Profile? _currentProfile;
   Map<String, Profile> _profiles = {};
   List<Connection> _connections = [];
@@ -21,9 +25,10 @@ class StorageService extends ChangeNotifier {
   List<Invitation> _invitations = [];
   List<ChatRoom> _chatRooms = [];
   List<Activity> _activities = [];
-  List<UserRating> _userRatings = [];
+  final List<UserRating> _userRatings = [];
   Peer? _selectedPeer;
   String? _selectedActivityId; // Currently selected activity for viewing invitations
+  String? _apiUserId; // Store API user ID for backend integration
 
   Profile? get currentProfile => _currentProfile;
   List<Connection> get connections => _connections;
@@ -87,15 +92,34 @@ class StorageService extends ChangeNotifier {
   List<Invitation> get pendingInvitations =>
       _invitations.where((i) => i.isPending).toList();
 
-  /// Load current profile from persistent storage
+  /// Load current profile from persistent storage and sync with API
   Future<void> loadUserProfile() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      
+      // Load API user ID first
+      _apiUserId = prefs.getString(_keyApiUserId);
+      
       final profileJson = prefs.getString(_keyCurrentProfile);
       
       if (profileJson != null) {
         final profileMap = jsonDecode(profileJson) as Map<String, dynamic>;
         _currentProfile = Profile.fromJson(profileMap);
+        
+        // If we have an API user ID, try to sync the latest profile from backend
+        if (_apiUserId != null) {
+          try {
+            final apiUserIdInt = int.parse(_apiUserId!);
+            final apiUserRead = await _apiService.getUser(apiUserIdInt);
+            final apiProfile = _apiService.userReadToProfile(apiUserRead);
+            _currentProfile = apiProfile;
+            // Update local cache with latest data
+            await _persistCurrentProfile();
+          } catch (e) {
+            debugPrint('Error syncing profile from API: $e');
+            // Continue with local cached profile if API fails
+          }
+        }
       }
 
       // Load connections
@@ -159,6 +183,18 @@ class StorageService extends ChangeNotifier {
     }
   }
 
+  /// Persist API user ID
+  Future<void> _persistApiUserId() async {
+    try {
+      if (_apiUserId == null) return;
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyApiUserId, _apiUserId!);
+    } catch (e) {
+      debugPrint('Error saving API user ID: $e');
+    }
+  }
+
   /// Clear persisted data
   Future<void> _clearPersistedProfile() async {
     try {
@@ -166,20 +202,45 @@ class StorageService extends ChangeNotifier {
       await prefs.remove(_keyCurrentProfile);
       await prefs.remove(_keyConnections);
       await prefs.remove(_keyProfiles);
+      await prefs.remove(_keyApiUserId);
     } catch (e) {
       debugPrint('Error clearing profile data: $e');
     }
   }
 
-  /// Save user name (registration step)
+  /// Save user name (registration step) - creates user in API
   Future<void> saveUserName(String userName) async {
-    final id = DateTime.now().millisecondsSinceEpoch.toString();
-    _currentProfile = Profile(id: id, userName: userName);
-    await _persistCurrentProfile();
-    notifyListeners();
+    try {
+      // Create a temporary profile for the API call
+      final tempProfile = Profile(
+        id: '', // Will be replaced by API
+        userName: userName,
+      );
+      
+      // Create user in API first
+      final userCreate = _apiService.profileToUserCreate(tempProfile);
+      final apiUserRead = await _apiService.createUser(userCreate);
+      final apiProfile = _apiService.userReadToProfile(apiUserRead);
+      
+      _currentProfile = apiProfile;
+      _apiUserId = apiProfile.id;
+      
+      // Persist both profile and API user ID
+      await _persistCurrentProfile();
+      await _persistApiUserId();
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error creating user in API: $e');
+      // Fallback to local-only if API fails
+      final id = DateTime.now().millisecondsSinceEpoch.toString();
+      _currentProfile = Profile(id: id, userName: userName);
+      await _persistCurrentProfile();
+      notifyListeners();
+    }
   }
 
-  /// Update current profile with additional information
+  /// Update current profile with additional information - syncs with API
   Future<void> updateProfile({
     String? school,
     String? major,
@@ -189,6 +250,7 @@ class StorageService extends ChangeNotifier {
   }) async {
     if (_currentProfile == null) return;
 
+    // Update local profile first for immediate UI response
     _currentProfile = _currentProfile!.copyWith(
       school: school,
       major: major,
@@ -196,6 +258,21 @@ class StorageService extends ChangeNotifier {
       background: background,
       profileImagePath: profileImagePath,
     );
+    
+    // Try to sync with API if we have an API user ID
+    if (_apiUserId != null) {
+      try {
+        final apiUserIdInt = int.parse(_apiUserId!);
+        final userUpdate = _apiService.profileToUserUpdate(_currentProfile!);
+        final updatedUserRead = await _apiService.updateUser(apiUserIdInt, userUpdate);
+        final updatedProfile = _apiService.userReadToProfile(updatedUserRead);
+        _currentProfile = updatedProfile;
+      } catch (e) {
+        debugPrint('Error updating profile in API: $e');
+        // Continue with local update if API fails
+      }
+    }
+    
     await _persistCurrentProfile();
     notifyListeners();
   }
@@ -211,6 +288,7 @@ class StorageService extends ChangeNotifier {
     _activities = [];
     _selectedPeer = null;
     _selectedActivityId = null;
+    _apiUserId = null;
     await _clearPersistedProfile();
     notifyListeners();
   }

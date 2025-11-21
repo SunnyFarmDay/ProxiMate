@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
+import '../services/storage_service_wrapper.dart';
 import '../screens/register_screen.dart';
 import '../screens/edit_profile_screen.dart';
 
@@ -20,6 +21,12 @@ class ProfileTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report),
+              tooltip: 'Test API Connection',
+              onPressed: () => _testApiConnection(context),
+            ),
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: 'Edit Profile',
@@ -161,6 +168,11 @@ class ProfileTab extends StatelessWidget {
     );
   }
 
+  void _testApiConnection(BuildContext context) async {
+    final wrapper = StorageServiceWrapper(context);
+    await wrapper.testApiConnection();
+  }
+
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -174,7 +186,8 @@ class ProfileTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              await context.read<StorageService>().logout();
+              final wrapper = StorageServiceWrapper(context);
+              await wrapper.clearProfile();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
