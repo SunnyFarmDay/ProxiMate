@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/peer.dart';
+import '../models/activity.dart';
 import '../services/storage_service.dart';
-import 'restaurant_selection_screen.dart';
+import '../utils/toast_utils.dart';
+import 'activity_selection_screen.dart';
 import 'main_screen.dart';
 
 /// Detailed view of a peer's profile
@@ -161,10 +163,10 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.restaurant_menu),
+                              : const Icon(Icons.event),
                           label: Text(_isSending
                               ? 'Sending Invite...'
-                              : 'Send Invitation to Eat'),
+                              : 'Send Activity Invitation'),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
@@ -319,22 +321,22 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
     );
   }
 
-  Future<void> _handleSendInvite() async {
+Future<void> _handleSendInvite() async {
     print('_handleSendInvite called for peer: ${widget.peer.name}');
     
-    // First, show restaurant selection screen
-    final selectedRestaurant = await Navigator.push<String>(
+    // First, show activity selection screen
+    final selectedActivity = await Navigator.push<Activity>(
       context,
       MaterialPageRoute(
-        builder: (context) => const RestaurantSelectionScreen(),
+        builder: (context) => const ActivitySelectionScreen(),
       ),
     );
 
-    print('Restaurant selected: $selectedRestaurant');
+    print('Activity selected: ${selectedActivity?.name}');
 
-    // If user cancelled restaurant selection, don't send invitation
-    if (selectedRestaurant == null || !mounted) {
-      print('Restaurant selection cancelled or widget not mounted');
+    // If user cancelled activity selection, don't send invitation
+    if (selectedActivity == null || !mounted) {
+      print('Activity selection cancelled or widget not mounted');
       return;
     }
 
@@ -346,7 +348,7 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
       print('Calling sendInvitation...');
       await context.read<StorageService>().sendInvitation(
             widget.peer,
-            selectedRestaurant,
+            selectedActivity.name, // Use activity name as restaurant for now
           );
       print('sendInvitation completed successfully');
 
@@ -359,14 +361,21 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
           (route) => false,
         );
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Invitation sent to ${widget.peer.name} for $selectedRestaurant!',
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            duration: const Duration(seconds: 3),
-          ),
+        ToastUtils.showSuccess(
+          context,
+          'Invitation sent to ${widget.peer.name} for ${selectedActivity.name}!',
+        );
+      }
+    } catch (e) {
+      print('Error sending invitation: $e');
+      
+      // Log the error
+      debugPrint('Failed to send invitation to ${widget.peer.name}: $e');
+      
+      if (mounted) {
+        ToastUtils.showError(
+          context,
+          'Failed to send invitation: ${e.toString()}',
         );
       }
     } finally {
@@ -375,6 +384,6 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
           _isSending = false;
         });
       }
-    }
-  }
+}
+}
 }

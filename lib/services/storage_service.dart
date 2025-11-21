@@ -2,11 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:math';
-import '../models/profile.dart';
-import '../models/peer.dart';
-import '../models/meeting.dart';
-import '../models/connection.dart';
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/activity.dart';
+import '../models/connection.dart';
+import '../models/meeting.dart';
+import '../models/peer.dart';
+import '../models/profile.dart';
 import '../models/user_rating.dart';
 import 'api_service.dart';
 import 'location_service.dart';
@@ -194,8 +198,8 @@ class StorageService extends ChangeNotifier {
       
       // Select first activity if none is selected
       if (_selectedActivityId == null && _activities.isNotEmpty) {
-        _selectedActivityId = _activities.first.id;
-        _debugLog('Auto-selected activity: ${_activities.first.name}');
+        _selectedActivityId = _activities.first.id.toString();
+        _debugLog('Auto-selected activity: ${_activities.first.name} (ID: ${_activities.first.id}, type: ${_activities.first.id.runtimeType})');
       }
       
       notifyListeners();
@@ -296,9 +300,7 @@ class StorageService extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error creating user in API: $e');
-      // Fallback to local-only if API fails
-      final id = DateTime.now().millisecondsSinceEpoch.toString();
-      _currentProfile = Profile(id: id, userName: userName);
+      throw Exception('Failed to create user: $e');
       await _persistCurrentProfile();
       notifyListeners();
     }
@@ -425,16 +427,20 @@ class StorageService extends ChangeNotifier {
     await clearProfile();
   }
 
-  /// Create a new activity
-  Activity createActivity(String name, String description) {
-    final activity = Activity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      description: description,
-      createdAt: DateTime.now(),
-    );
+/// Create a new activity via API
+  Future<Activity> createActivity(String name, String description) async {
+    final activityCreate = ActivityCreate((b) => b
+      ..name = name
+      ..description = description);
+
+    final apiActivity = await _apiService.createActivity(activityCreate);
+    final activity = _apiService.activityReadToActivity(apiActivity);
+    
     _activities.add(activity);
+    _selectedActivityId = activity.id.toString();
+    _debugLog('Created activity via API: ${activity.id} (type: ${activity.id.runtimeType})');
     notifyListeners();
+    
     return activity;
   }
 
@@ -449,7 +455,8 @@ class StorageService extends ChangeNotifier {
 
   /// Select an activity to view its invitations
   void selectActivity(String activityId) {
-    _selectedActivityId = activityId;
+    _selectedActivityId = activityId.toString();
+    _debugLog('Selected activity ID: $activityId (type: ${activityId.runtimeType})');
     notifyListeners();
   }
 
@@ -460,35 +467,34 @@ class StorageService extends ChangeNotifier {
   }
 
   /// Create or get the search activity (removes duplicates)
-  Activity createOrGetSearchActivity() {
+  Future<Activity> createOrGetSearchActivity() async {
     const searchActivityName = 'Searching for peers to eat';
 
-    // Find and remove any existing search activities (clean up duplicates)
-    final oldSearchActivities = _activities
+    // Check if we already have a search activity from the server
+    final existingSearchActivity = _activities
         .where((a) => a.name == searchActivityName)
-        .map((a) => a.id)
-        .toList();
+        .firstOrNull;
+    
+    if (existingSearchActivity != null) {
+      _selectedActivityId = existingSearchActivity.id.toString();
+      _debugLog('Using existing search activity: ${existingSearchActivity.id}');
+      notifyListeners();
+      return existingSearchActivity;
+    }
 
-    // Remove old search activities
-    _activities.removeWhere((a) => a.name == searchActivityName);
+    // Create a new search activity via API
+    final activityCreate = ActivityCreate((b) => b
+      ..name = searchActivityName
+      ..description = 'Looking for people nearby who want to grab food together');
 
-    // Also remove invitations associated with old search activities
-    _invitations.removeWhere(
-      (inv) => oldSearchActivities.contains(inv.activityId),
-    );
-
-    // Create a new search activity
-    final activity = Activity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: searchActivityName,
-      description: 'Looking for people nearby who want to grab food together',
-      createdAt: DateTime.now(),
-    );
-
+    final apiActivity = await _apiService.createActivity(activityCreate);
+    final activity = _apiService.activityReadToActivity(apiActivity);
+    
     _activities.add(activity);
-    _selectedActivityId = activity.id;
+    _selectedActivityId = activity.id.toString();
+    _debugLog('Created search activity via API: ${activity.id} (type: ${activity.id.runtimeType})');
     notifyListeners();
-
+    
     return activity;
   }
 
@@ -967,9 +973,9 @@ class StorageService extends ChangeNotifier {
     notifyListeners();
   }
 
-/// Send invitation to eat
-  Future<Invitation> sendInvitation(Peer peer, String restaurant) async {
-    _debugLog('sendInvitation called for peer: ${peer.name}, restaurant: $restaurant');
+/// Send invitation for activity
+  Future<Invitation> sendInvitation(Peer peer, String activityName) async {
+    _debugLog('sendInvitation called for peer: ${peer.name}, activity: $activityName');
     
     // Require activity to be selected
     if (_selectedActivityId == null) {
@@ -984,14 +990,7 @@ class StorageService extends ChangeNotifier {
     }
 
     _debugLog('Validation passed - proceeding with API call');
-
-    // Require API user ID for backend integration
-    if (_apiUserId == null) {
-      _debugLog('No API user ID');
-      throw Exception('User not authenticated. Please log in first.');
-    }
-
-    _debugLog('Creating invitation with senderId: $_apiUserId, receiverId: ${peer.id}, activityId: $_selectedActivityId');
+    _debugLog('Creating invitation with senderId: $_apiUserId, receiverId: ${peer.id}, activityId: $_selectedActivityId (type: ${_selectedActivityId.runtimeType})');
 
     // Generate ice-breaking questions
     final iceBreakers = _generateIceBreakers(peer);
@@ -1000,11 +999,12 @@ class StorageService extends ChangeNotifier {
       _debugLog('Creating API invitation request...');
       
       // Create API invitation request
+      final activityId = _selectedActivityId!.toString();
       final invitationCreate = InvitationCreate((b) => b
         ..senderId = int.parse(_apiUserId!)
         ..receiverId = int.parse(peer.id)
-        ..activityId = _selectedActivityId!
-        ..restaurant = restaurant
+        ..activityId = activityId
+        ..restaurant = activityName
         ..status = 'pending'
         ..sentByMe = true
         ..nameCardCollected = false
@@ -1025,7 +1025,7 @@ class StorageService extends ChangeNotifier {
         id: apiResponse.id.toString(),
         peerId: peer.id,
         peerName: peer.name,
-        restaurant: restaurant,
+restaurant: activityName,
         activityId: _selectedActivityId!,
         createdAt: apiResponse.createdAt,
         sentByMe: true,
