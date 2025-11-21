@@ -287,7 +287,7 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
     Color badgeColor;
 
     if (percentage >= 70) {
-      badgeColor = Colors.green;
+      badgeColor = Theme.of(context).colorScheme.primary;
     } else if (percentage >= 40) {
       badgeColor = Colors.orange;
     } else {
@@ -357,7 +357,7 @@ class _PeerDetailScreenState extends State<PeerDetailScreen> {
             content: Text(
               'Invitation sent to ${widget.peer.name} for $selectedRestaurant!',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 3),
           ),
         );

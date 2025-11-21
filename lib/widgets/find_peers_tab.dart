@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:playground/widgets/custom_buttons.dart';
 import '../screens/search_peers_screen.dart';
 
 /// Find Peers tab with search functionality
@@ -8,9 +9,7 @@ class FindPeersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ProxiMate'),
-      ),
+      appBar: AppBar(title: const Text('ProxiMate')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -18,16 +17,16 @@ class FindPeersTab extends StatelessWidget {
           children: [
             Text(
               'Welcome!',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Connect with peers who share your interests',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 32),
             _buildFeatureCard(
@@ -47,13 +46,13 @@ class FindPeersTab extends StatelessWidget {
                       'By searching for nearby peers, you agree to share your profile information with others in your area who are also looking to connect.',
                     ),
                     actions: [
-                      TextButton(
+                      PrimaryTextButton(
+                        text: 'Cancel',
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Cancel'),
                       ),
-                      ElevatedButton(
+                      PrimaryButton(
+                        text: 'Share & Continue',
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Continue'),
                       ),
                     ],
                   ),
@@ -74,34 +73,38 @@ class FindPeersTab extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'How it works',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildStepItem(
               context,
               number: '1',
               title: 'Search & Send Invite',
-              description: 'Find people nearby who want to eat and send an invitation',
+              description:
+                  'Find people nearby who want to eat and send an invitation',
             ),
             _buildStepItem(
               context,
               number: '2',
               title: 'Accept Invitation',
-              description: 'Check your invitations and accept one you like (max 1)',
+              description:
+                  'Check your invitations and accept one you like (max 1)',
             ),
             _buildStepItem(
               context,
               number: '3',
               title: 'Chat & Meet Up',
-              description: 'Chat to plan the meetup at the suggested restaurant',
+              description:
+                  'Chat to plan the meetup at the suggested restaurant',
             ),
             _buildStepItem(
               context,
               number: '4',
               title: 'Collect Name Card',
-              description: 'After meeting, collect their name card to build your network!',
+              description:
+                  'After meeting, collect their name card to build your network!',
             ),
           ],
         ),
@@ -142,15 +145,15 @@ class FindPeersTab extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -198,16 +201,16 @@ class FindPeersTab extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                 ),
               ],
             ),

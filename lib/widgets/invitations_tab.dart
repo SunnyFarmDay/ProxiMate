@@ -14,9 +14,7 @@ class InvitationsTab extends StatelessWidget {
     final activities = storage.activities;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Activities'),
-      ),
+      appBar: AppBar(title: const Text('My Activities')),
       body: activities.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
@@ -46,17 +44,17 @@ class InvitationsTab extends StatelessWidget {
             Text(
               'No Activities Yet',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'Search for nearby peers to create an activity\nand start receiving invitations!',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
           ],
         ),
@@ -86,11 +84,7 @@ class InvitationsTab extends StatelessWidget {
           color: Colors.red,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 32),
       ),
       confirmDismiss: (direction) async {
         return await showDialog<bool>(
@@ -107,9 +101,7 @@ class InvitationsTab extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red,
-                ),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
                 child: const Text('Delete'),
               ),
             ],
@@ -133,9 +125,8 @@ class InvitationsTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ActivityInvitationsScreen(
-                  activity: activity,
-                ),
+                builder: (context) =>
+                    ActivityInvitationsScreen(activity: activity),
               ),
             );
           },
@@ -150,7 +141,9 @@ class InvitationsTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -166,20 +159,14 @@ class InvitationsTab extends StatelessWidget {
                         children: [
                           Text(
                             activity.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             activity.description,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -214,9 +201,9 @@ class InvitationsTab extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       _formatDate(activity.createdAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                     ),
                     const Spacer(),
                     Icon(Icons.swipe_left, size: 14, color: Colors.grey[500]),
@@ -224,9 +211,9 @@ class InvitationsTab extends StatelessWidget {
                     Text(
                       'Swipe to delete',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
-                            fontSize: 11,
-                          ),
+                        color: Colors.grey[500],
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
@@ -255,4 +242,3 @@ class InvitationsTab extends StatelessWidget {
     }
   }
 }
-

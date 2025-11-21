@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/custom_buttons.dart';
 
 /// Screen for selecting a restaurant when sending an invitation
 class RestaurantSelectionScreen extends StatefulWidget {
@@ -170,14 +171,10 @@ class _RestaurantSelectionScreenState extends State<RestaurantSelectionScreen> {
             child: SafeArea(
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PrimaryButton(
+                  text: 'Confirm Selection',
                   onPressed: _confirmSelection,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: const Text(
                     'Confirm Selection',
                     style: TextStyle(

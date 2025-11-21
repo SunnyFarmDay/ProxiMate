@@ -70,7 +70,7 @@ class _RatingDialogState extends State<RatingDialog> {
                   _getRatingText(_rating),
                   style: TextStyle(
                     fontSize: 12,
-                    color: _rating <= 2 ? Colors.red : Colors.green,
+                    color: _rating <= 2 ? Colors.red : Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

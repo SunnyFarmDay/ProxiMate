@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
+import '../services/storage_service_wrapper.dart';
 import '../config/profile_config.dart';
 import '../widgets/tag_selector.dart';
 import '../widgets/profile_image_picker.dart';
+
 
 /// Edit profile screen where user can update their information
 class EditProfileScreen extends StatefulWidget {
@@ -87,38 +89,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       setState(() => _isLoading = true);
 
-      try {
-        final storageService = context.read<StorageService>();
-        await storageService.updateProfile(
-          school: _schoolController.text.trim(),
-          major: _selectedMajors.join(', '),
-          interests: _selectedInterests.join(', '),
-          background: _backgroundController.text.trim(),
-          profileImagePath: _profileImagePath,
-        );
+      final wrapper = StorageServiceWrapper(context);
+      final success = await wrapper.updateProfile(
+        school: _schoolController.text.trim(),
+        major: _selectedMajors.join(', '),
+        interests: _selectedInterests.join(', '),
+        background: _backgroundController.text.trim(),
+        profileImagePath: _profileImagePath,
+      );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to update profile: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+      if (success && mounted) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }

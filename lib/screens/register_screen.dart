@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/storage_service.dart';
+import '../services/storage_service_wrapper.dart';
 import 'profile_setup_screen.dart';
 
 /// Registration screen where user enters their name
@@ -23,10 +22,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      final storageService = context.read<StorageService>();
-      await storageService.saveUserName(_userNameController.text.trim());
+      final wrapper = StorageServiceWrapper(context);
+      final success = await wrapper.saveUserName(_userNameController.text.trim());
 
-      if (mounted) {
+      if (success && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => const ProfileSetupScreen(),

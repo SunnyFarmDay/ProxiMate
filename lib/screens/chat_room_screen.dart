@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/meeting.dart';
 import '../services/storage_service.dart';
+import '../widgets/custom_buttons.dart';
 
 /// Chat room screen for communicating about meetup
 class ChatRoomScreen extends StatefulWidget {
@@ -27,9 +28,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
 
-    context
-        .read<StorageService>()
-        .sendMessage(widget.chatRoom.id, _messageController.text.trim());
+    context.read<StorageService>().sendMessage(
+      widget.chatRoom.id,
+      _messageController.text.trim(),
+    );
 
     _messageController.clear();
 
@@ -48,8 +50,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final storage = context.watch<StorageService>();
-    final chatRoom = storage.chatRooms
-        .firstWhere((c) => c.id == widget.chatRoom.id, orElse: () => widget.chatRoom);
+    final chatRoom = storage.chatRooms.firstWhere(
+      (c) => c.id == widget.chatRoom.id,
+      orElse: () => widget.chatRoom,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -60,8 +64,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             Text(
               chatRoom.restaurant,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+                color: Colors.white.withOpacity(0.9),
+              ),
             ),
           ],
         ),
@@ -112,16 +116,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
-            color: Colors.green.shade50,
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 16),
+                Icon(
+                  Icons.check_circle,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Ready to meet up at ${chatRoom.restaurant}',
                   style: TextStyle(
-                    color: Colors.green.shade700,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -135,15 +143,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline,
-                            size: 60, color: Colors.grey[400]),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 60,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Start chatting about your meetup!',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -193,13 +202,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
+                PrimaryIconButton(
+                  icon: Icons.send,
                   onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
                 ),
               ],
             ),
@@ -213,8 +220,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            message.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: message.isMine
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         children: [
           Container(
             constraints: BoxConstraints(
