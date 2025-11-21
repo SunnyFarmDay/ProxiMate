@@ -4,6 +4,7 @@ import '../services/storage_service.dart';
 import '../config/profile_config.dart';
 import '../widgets/tag_selector.dart';
 import '../widgets/profile_image_picker.dart';
+
 import 'main_screen.dart';
 
 /// Profile setup screen where user enters additional information

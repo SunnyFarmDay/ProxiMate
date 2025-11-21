@@ -489,7 +489,7 @@ class _NetworkTabState extends State<NetworkTab> {
                   Icons.book,
                   'Major',
                   profile.major!,
-                  Colors.green,
+                  Theme.of(context).colorScheme.primary,
                 ),
               if (profile.major != null) const SizedBox(height: 16),
               if (profile.interests != null)
@@ -594,7 +594,7 @@ class _NetworkTabState extends State<NetworkTab> {
                   Icons.book,
                   'Major',
                   profile.major!,
-                  Colors.green,
+                  Theme.of(context).colorScheme.primary,
                 ),
               if (profile.major != null) const SizedBox(height: 16),
               if (profile.interests != null)

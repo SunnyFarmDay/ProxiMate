@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'circular_image_cropper.dart';
 import 'web_image_cropper.dart';
 
+
 /// Widget for picking and cropping profile images
 class ProfileImagePicker extends StatefulWidget {
   final String? currentImagePath;
@@ -95,10 +96,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile image updated'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 1),
+                SnackBar(
+                  content: const Text('Profile image updated'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  duration: const Duration(seconds: 1),
                 ),
               );
             }
@@ -150,10 +151,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile image updated'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
+            SnackBar(
+              content: const Text('Profile image updated'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              duration: const Duration(seconds: 1),
             ),
           );
         }
@@ -213,8 +214,8 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             ),
             if (widget.currentImagePath != null)
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                title: Text('Remove Photo', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onImageSelected(null);

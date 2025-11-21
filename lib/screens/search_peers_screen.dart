@@ -307,7 +307,7 @@ class _SearchPeersScreenState extends State<SearchPeersScreen>
     Color badgeColor;
 
     if (percentage >= 70) {
-      badgeColor = Colors.green;
+      badgeColor = Theme.of(context).colorScheme.primary;
     } else if (percentage >= 40) {
       badgeColor = Theme.of(context).colorScheme.primary;
     } else {

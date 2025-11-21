@@ -7,18 +7,17 @@ import '../models/meeting.dart';
 import '../models/activity.dart';
 import '../screens/chat_room_screen.dart';
 import '../widgets/rating_dialog.dart';
+import '../widgets/custom_buttons.dart';
 
 /// Screen showing all invitations for a specific activity
 class ActivityInvitationsScreen extends StatefulWidget {
   final Activity activity;
 
-  const ActivityInvitationsScreen({
-    super.key,
-    required this.activity,
-  });
+  const ActivityInvitationsScreen({super.key, required this.activity});
 
   @override
-  State<ActivityInvitationsScreen> createState() => _ActivityInvitationsScreenState();
+  State<ActivityInvitationsScreen> createState() =>
+      _ActivityInvitationsScreenState();
 }
 
 class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
@@ -29,7 +28,10 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
   void initState() {
     super.initState();
     // Start timer for auto-responding to pending invitations after 5 seconds
-    _autoResponseTimer = Timer(const Duration(seconds: 5), _autoRespondToPendingInvitations);
+    _autoResponseTimer = Timer(
+      const Duration(seconds: 5),
+      _autoRespondToPendingInvitations,
+    );
   }
 
   @override
@@ -40,7 +42,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
 
   Future<void> _autoRespondToPendingInvitations() async {
     if (!mounted) return;
-    
+
     final storage = context.read<StorageService>();
     final sentInvitations = storage.sentInvitations
         .where((i) => i.activityId == widget.activity.id && i.isPending)
@@ -49,14 +51,14 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
     for (final invitation in sentInvitations) {
       // Random chance: 70% accept, 30% decline
       final shouldAccept = _random.nextDouble() < 0.7;
-      
+
       if (shouldAccept) {
         await storage.mockAcceptSentInvitation(invitation.id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${invitation.peerName} accepted your invitation!'),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               duration: const Duration(seconds: 2),
             ),
           );
@@ -73,7 +75,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
           );
         }
       }
-      
+
       // Add a small delay between responses to make it feel more natural
       await Future.delayed(const Duration(milliseconds: 500));
     }
@@ -82,7 +84,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
   void _showPeerProfileDialog(Invitation invitation) {
     final storage = context.read<StorageService>();
     final peer = storage.getPeerById(invitation.peerId);
-    
+
     if (peer == null) return;
 
     showDialog(
@@ -125,10 +127,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         peer.school,
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
                       ),
                     ],
                   ),
@@ -144,7 +143,10 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               runSpacing: 8,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(16),
@@ -161,7 +163,10 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                 ),
                 ...peer.interests.split(',').map((interest) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(16),
@@ -192,17 +197,14 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
             const SizedBox(height: 8),
             Text(
               peer.background,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          PrimaryTextButton(
+            text: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -212,7 +214,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
   @override
   Widget build(BuildContext context) {
     final storage = context.watch<StorageService>();
-    
+
     // Filter invitations by this activity's ID
     final sentInvitations = storage.sentInvitations
         .where((i) => i.activityId == widget.activity.id)
@@ -225,9 +227,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.activity.name),
-      ),
+      appBar: AppBar(title: Text(widget.activity.name)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -239,11 +239,16 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                  Icon(
+                    Icons.info_outline,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -268,8 +273,10 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                 Colors.green,
               ),
               const SizedBox(height: 12),
-              ...acceptedInvitations.map((invitation) =>
-                  _buildAcceptedCard(context, invitation, storage)),
+              ...acceptedInvitations.map(
+                (invitation) =>
+                    _buildAcceptedCard(context, invitation, storage),
+              ),
               const SizedBox(height: 24),
             ],
 
@@ -284,7 +291,9 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
             // Mock button to simulate receiving an invitation
             Container(
               margin: const EdgeInsets.only(bottom: 12),
-              child: OutlinedButton.icon(
+              child: PrimaryOutlinedButton.icon(
+                text: 'Mock Receive Invitation (Debug)',
+                icon: Icons.bug_report,
                 onPressed: () async {
                   try {
                     await storage.mockReceiveInvitation();
@@ -300,25 +309,23 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                   } catch (e) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error: $e'),
+                        const SnackBar(
+                          content: Text('Failed to receive mock invitation'),
                           backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }
                   }
                 },
-                icon: const Icon(Icons.bug_report, size: 18),
-                label: const Text('Mock Receive Invitation (Debug)'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.orange,
-                  side: BorderSide(color: Colors.orange.shade300),
-                ),
+                foregroundColor: Colors.orange,
+                borderColor: Colors.orange.shade300,
               ),
             ),
             if (receivedInvitations.isNotEmpty) ...[
               ...receivedInvitations.map(
-                  (invitation) => _buildReceivedCard(context, invitation)),
+                (invitation) => _buildReceivedCard(context, invitation),
+              ),
             ],
             const SizedBox(height: 24),
 
@@ -332,7 +339,8 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               ),
               const SizedBox(height: 12),
               ...sentInvitations.map(
-                  (invitation) => _buildSentCard(context, invitation)),
+                (invitation) => _buildSentCard(context, invitation),
+              ),
               const SizedBox(height: 24),
             ],
 
@@ -344,24 +352,20 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               Center(
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.mail_outline,
-                      size: 80,
-                      color: Colors.grey[400],
-                    ),
+                    Icon(Icons.mail_outline, size: 80, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
                       'No invitations yet',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Search for peers and send invitations!',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[500],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -386,9 +390,9 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
       ],
     );
@@ -439,24 +443,25 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       children: [
                         Text(
                           invitation.peerName,
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.restaurant,
-                                size: 14, color: Colors.grey[700]),
+                            Icon(
+                              Icons.restaurant,
+                              size: 14,
+                              color: Colors.grey[700],
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               invitation.restaurant,
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey[700],
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),
@@ -465,10 +470,13 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                   ),
                 ),
                 // Chat button in top right corner
-                ElevatedButton.icon(
+                PrimaryButton.icon(
+                  text: 'Chat',
+                  icon: Icons.chat,
                   onPressed: () async {
-                    final chatRoom =
-                        storage.getChatRoomByPeerId(invitation.peerId);
+                    final chatRoom = storage.getChatRoomByPeerId(
+                      invitation.peerId,
+                    );
                     if (chatRoom != null) {
                       // Mark chat as opened if not already
                       if (!invitation.chatOpened) {
@@ -485,15 +493,11 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       }
                     }
                   },
-                  icon: const Icon(Icons.chat, size: 18),
-                  label: const Text('Chat'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
+                  backgroundColor: Colors.green,
                 ),
               ],
             ),
-            
+
             // Ice-breaking questions section
             if (invitation.iceBreakers.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -502,9 +506,9 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               Text(
                 'Meetup Ice Breaker Questions',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange[700],
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[700],
+                ),
               ),
               const SizedBox(height: 12),
               ...invitation.iceBreakers.map((iceBreaker) {
@@ -522,29 +526,25 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                     children: [
                       Text(
                         iceBreaker.question,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green[900],
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green[900],
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         iceBreaker.answer,
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[700],
-                                  fontStyle: FontStyle.italic,
-                                ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[700],
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ],
                   ),
                 );
               }).toList(),
             ],
-            
+
             // Action buttons at bottom (only show after chat opened)
             if (invitation.chatOpened) ...[
               const SizedBox(height: 16),
@@ -553,7 +553,9 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
               // Not Good Match button (full width)
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
+                child: DestructiveButton.icon(
+                  text: 'Not Good Match',
+                  icon: Icons.close,
                   onPressed: () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
@@ -563,16 +565,13 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                           'This will decline the invitation, remove the chat, and delete this activity. Are you sure?',
                         ),
                         actions: [
-                          TextButton(
+                          PrimaryButton(
+                            text: 'Cancel',
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
                           ),
-                          TextButton(
+                          DestructiveButton(
+                            text: 'Confirm',
                             onPressed: () => Navigator.pop(context, true),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red,
-                            ),
-                            child: const Text('Confirm'),
                           ),
                         ],
                       ),
@@ -581,12 +580,12 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                     if (confirmed == true) {
                       // Show rating dialog after confirmation
                       if (context.mounted) {
-                        final ratingData = await showDialog<Map<String, dynamic>>(
-                          context: context,
-                          builder: (context) => RatingDialog(
-                            peerName: invitation.peerName,
-                          ),
-                        );
+                        final ratingData =
+                            await showDialog<Map<String, dynamic>>(
+                              context: context,
+                              builder: (context) =>
+                                  RatingDialog(peerName: invitation.peerName),
+                            );
 
                         // Process rating if provided
                         if (ratingData != null) {
@@ -601,7 +600,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       await storage.markNotGoodMatch(invitation.id);
                       // Delete the activity after declining
                       storage.deleteActivity(widget.activity.id);
-                      
+
                       if (context.mounted) {
                         // Navigate back to prevent showing deleted activity
                         Navigator.pop(context);
@@ -615,26 +614,20 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       }
                     }
                   },
-                  icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Not Good Match'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                  ),
                 ),
               ),
               const SizedBox(height: 8),
               // Collect Name Card button (full width)
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: PrimaryButton(
+                  text: 'Collect Name Card',
                   onPressed: () async {
                     // Show rating dialog before collecting name card
                     final ratingData = await showDialog<Map<String, dynamic>>(
                       context: context,
-                      builder: (context) => RatingDialog(
-                        peerName: invitation.peerName,
-                      ),
+                      builder: (context) =>
+                          RatingDialog(peerName: invitation.peerName),
                     );
 
                     // Process rating if provided
@@ -649,7 +642,7 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                     await storage.collectNameCard(invitation.id);
                     // Delete the activity after collecting name card (activity finished)
                     storage.deleteActivity(widget.activity.id);
-                    
+
                     if (context.mounted) {
                       // Navigate back since activity is deleted
                       Navigator.pop(context);
@@ -657,8 +650,10 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                         SnackBar(
                           content: Row(
                             children: [
-                              const Icon(Icons.check_circle,
-                                  color: Colors.white),
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.white,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -673,10 +668,14 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       );
                     }
                   },
-                  icon: const Icon(Icons.contacts, size: 18),
-                  label: const Text('Collect Name Card'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                  backgroundColor: Colors.green,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.contacts, size: 18),
+                      SizedBox(width: 8),
+                      Text('Collect Name Card'),
+                    ],
                   ),
                 ),
               ),
@@ -689,10 +688,11 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
 
   Widget _buildReceivedCard(BuildContext context, Invitation invitation) {
     final storage = context.read<StorageService>();
-    
+
     // Check if there's already an accepted invitation for THIS activity
-    final hasAccepted = storage.acceptedInvitations
-        .any((i) => i.activityId == invitation.activityId);
+    final hasAccepted = storage.acceptedInvitations.any(
+      (i) => i.activityId == invitation.activityId,
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -728,10 +728,8 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       children: [
                         Text(
                           invitation.peerName,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -755,8 +753,11 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        size: 16, color: Colors.orange[800]),
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.orange[800],
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -776,34 +777,28 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
             // Decline button (full width)
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              child: DestructiveButton.icon(
+                text: 'Decline',
+                icon: Icons.close,
                 onPressed: () async {
-                  await context
-                      .read<StorageService>()
-                      .declineInvitation(invitation.id);
+                  await context.read<StorageService>().declineInvitation(
+                    invitation.id,
+                  );
                 },
-                icon: const Icon(Icons.close, size: 18),
-                label: const Text('Decline'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                ),
               ),
             ),
             const SizedBox(height: 8),
             // Accept button (full width)
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: PrimaryButton.icon(
+                text: 'Accept',
+                icon: Icons.check,
                 onPressed: () async {
-                  await context
-                      .read<StorageService>()
-                      .acceptInvitation(invitation.id);
+                  await context.read<StorageService>().acceptInvitation(
+                    invitation.id,
+                  );
                 },
-                icon: const Icon(Icons.check, size: 18),
-                label: const Text('Accept'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
               ),
             ),
           ],
@@ -831,8 +826,8 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                     backgroundColor: isPending
                         ? Colors.grey
                         : invitation.isAccepted
-                            ? Colors.green
-                            : Colors.red,
+                        ? Colors.green
+                        : Colors.red,
                     child: Text(
                       invitation.peerName[0].toUpperCase(),
                       style: const TextStyle(
@@ -852,14 +847,17 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                       children: [
                         Text(
                           invitation.peerName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.restaurant, size: 14, color: Colors.grey[600]),
+                            Icon(
+                              Icons.restaurant,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               invitation.restaurant,
@@ -872,29 +870,32 @@ class _ActivityInvitationsScreenState extends State<ActivityInvitationsScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isPending
                         ? Colors.orange.withOpacity(0.2)
                         : invitation.isAccepted
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.2),
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     isPending
                         ? 'Pending'
                         : invitation.isAccepted
-                            ? 'Accepted'
-                            : 'Declined',
+                        ? 'Accepted'
+                        : 'Declined',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: isPending
                           ? Colors.orange
                           : invitation.isAccepted
-                              ? Colors.green
-                              : Colors.red,
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   ),
                 ),

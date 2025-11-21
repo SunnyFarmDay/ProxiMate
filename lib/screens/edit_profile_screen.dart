@@ -5,6 +5,7 @@ import '../config/profile_config.dart';
 import '../widgets/tag_selector.dart';
 import '../widgets/profile_image_picker.dart';
 
+
 /// Edit profile screen where user can update their information
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -99,9 +100,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile updated successfully'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Profile updated successfully'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
           Navigator.pop(context);
