@@ -1,28 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
-import '../models/activity.dart';
-import '../screens/activity_invitations_screen.dart';
+import '../models/meeting.dart';
+import '../screens/chat_room_screen.dart';
 
-/// Tab showing activities - user selects one to view invitations
+/// Tab showing invitations as a contacts list with chat-style interface
 class InvitationsTab extends StatelessWidget {
   const InvitationsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final storage = context.watch<StorageService>();
-    final activities = storage.activities;
+    
+    // Get all relevant invitations
+    final receivedInvitations = storage.receivedInvitations;
+    final sentInvitations = storage.sentInvitations;
+    final acceptedInvitations = storage.acceptedInvitations;
+    
+    // Combine all invitations for the contacts list
+    final allInvitations = [...receivedInvitations, ...sentInvitations, ...acceptedInvitations];
+    
+    // Sort by most recent first
+    allInvitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Activities')),
-      body: activities.isEmpty
+      appBar: AppBar(
+        title: const Text('Invitations'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1),
+        ),
+      ),
+      backgroundColor: Colors.white,
+      body: allInvitations.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: activities.length,
+              padding: EdgeInsets.zero,
+              itemCount: allInvitations.length,
               itemBuilder: (context, index) {
-                final activity = activities[index];
-                return _buildActivityCard(context, activity, storage);
+                final invitation = allInvitations[index];
+                return _buildInvitationContact(context, invitation, storage);
               },
             ),
     );
@@ -35,26 +55,33 @@ class InvitationsTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.local_activity_outlined,
-              size: 80,
-              color: Colors.grey[400],
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline,
+                size: 48,
+                color: Colors.grey[400],
+              ),
             ),
             const SizedBox(height: 24),
             Text(
-              'No Activities Yet',
+              'No Invitations Yet',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              'Search for nearby peers to create an activity\nand start receiving invitations!',
+              'Start connecting with peers to see invitations here',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
             ),
           ],
         ),
@@ -62,183 +89,186 @@ class InvitationsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityCard(
+  Widget _buildInvitationContact(
     BuildContext context,
-    Activity activity,
+    Invitation invitation,
     StorageService storage,
   ) {
-    // Count invitations for this activity
-    final sentCount = storage.sentInvitations.length;
-    final receivedCount = storage.receivedInvitations.length;
-    final acceptedCount = storage.acceptedInvitations.length;
-    final totalCount = sentCount + receivedCount + acceptedCount;
-
-    return Dismissible(
-      key: Key(activity.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white, size: 32),
-      ),
-      confirmDismiss: (direction) async {
-        return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete Activity?'),
-            content: const Text(
-              'This will remove this activity and all associated invitations. This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        );
-      },
-      onDismissed: (direction) {
-        storage.deleteActivity(activity.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${activity.name} deleted'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      },
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: InkWell(
-          onTap: () {
-            storage.selectActivity(activity.id);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    ActivityInvitationsScreen(activity: activity),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    return Column(
+      children: [
+        InkWell(
+          onTap: () => _handleInvitationTap(context, invitation, storage),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.local_activity,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 32,
-                      ),
+                // Avatar
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: _getAvatarColor(invitation),
+                  child: Text(
+                    _getInitials(invitation.peerName),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            activity.name,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Text(
+                              invitation.peerName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 4),
                           Text(
-                            activity.description,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            _formatTime(invitation.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    if (totalCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+                      const SizedBox(height: 4),
+                      
+                      // Status message
+                      Text(
+                        _getStatusMessage(invitation),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _getStatusColor(invitation),
+                          fontWeight: FontWeight.w500,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$totalCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      ),
+                      
+                      // Restaurant info (if available)
+                      if (invitation.restaurant.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '📍 ${invitation.restaurant}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatDate(activity.createdAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.swipe_left, size: 14, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Swipe to delete',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[500],
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                      ],
+                      
+                      
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
-      ),
+        const Divider(height: 1, indent: 72, thickness: 0.5),
+      ],
     );
   }
 
-  String _formatDate(DateTime date) {
+  void _handleInvitationTap(
+    BuildContext context,
+    Invitation invitation,
+    StorageService storage,
+  ) {
+    if (invitation.isAccepted) {
+      // Open chat room for accepted invitations
+      final chatRoom = storage.chatRooms
+          .where((cr) => cr.peerId == invitation.peerId)
+          .firstOrNull;
+      
+      if (chatRoom != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatRoomScreen(chatRoom: chatRoom),
+          ),
+        );
+      }
+    } else if (invitation.isPending) {
+      // Open chat view with invitation card for all pending invitations
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatRoomScreen(invitation: invitation),
+        ),
+      );
+    }
+  }
+
+  
+
+  
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  Color _getAvatarColor(Invitation invitation) {
+    if (invitation.isAccepted) {
+      return Colors.green;
+    } else if (invitation.isPending) {
+      return invitation.sentByMe ? Colors.blue : Colors.orange;
+    } else {
+      return Colors.grey;
+    }
+  }
+
+  String _getStatusMessage(Invitation invitation) {
+    if (invitation.isAccepted) {
+      return invitation.chatOpened ? 'Chat available' : 'Invitation accepted 💬';
+    } else if (invitation.isPending) {
+      return invitation.sentByMe 
+          ? 'Invitation sent ⏳' 
+          : 'Wants to connect 🤝';
+    } else {
+      return 'Invitation declined';
+    }
+  }
+
+  Color _getStatusColor(Invitation invitation) {
+    if (invitation.isAccepted) {
+      return Colors.green;
+    } else if (invitation.isPending) {
+      return invitation.sentByMe ? Colors.blue : Colors.orange;
+    } else {
+      return Colors.grey;
+    }
+  }
+
+  String _formatTime(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'now';
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}m';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}h';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return '${difference.inDays}d';
     } else {
-      return '${date.month}/${date.day}/${date.year}';
+      return '${date.month}/${date.day}';
     }
   }
 }

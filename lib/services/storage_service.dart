@@ -2,9 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:math';
-
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 import '../models/activity.dart';
 import '../models/connection.dart';
@@ -26,6 +24,7 @@ class StorageService extends ChangeNotifier {
 
   final ApiService _apiService = ApiService();
   late LocationService _locationService;
+  Timer? _invitationFetchTimer;
   Profile? _currentProfile;
   Map<String, Profile> _profiles = {};
   List<Connection> _connections = [];
@@ -170,6 +169,11 @@ class StorageService extends ChangeNotifier {
 
       // Load activities from API
       await _loadActivitiesFromApi();
+      
+      // Start invitation polling if user is logged in
+      if (_apiUserId != null) {
+        startInvitationPolling();
+      }
 
       notifyListeners();
     } catch (e) {
@@ -296,13 +300,14 @@ class StorageService extends ChangeNotifier {
 
       // Start location tracking for the new user
       _startLocationTracking();
+      
+      // Start invitation polling for the new user
+      startInvitationPolling();
 
       notifyListeners();
     } catch (e) {
       debugPrint('Error creating user in API: $e');
       throw Exception('Failed to create user: $e');
-      await _persistCurrentProfile();
-      notifyListeners();
     }
   }
 
@@ -417,6 +422,9 @@ class StorageService extends ChangeNotifier {
 
     // Stop location tracking when user logs out
     _locationService.stopLocationTracking();
+    
+    // Stop invitation polling when user logs out
+    stopInvitationPolling();
 
     await _clearPersistedProfile();
     notifyListeners();
@@ -1051,6 +1059,92 @@ restaurant: activityName,
     }
   }
 
+  /// Start periodic invitation fetching
+  void startInvitationPolling() {
+    if (_apiUserId == null) {
+      _debugLog('Cannot start invitation polling: API user ID not set');
+      return;
+    }
+
+    // Stop existing timer if any
+    stopInvitationPolling();
+
+    _debugLog('Starting invitation polling every 30 seconds');
+    
+    // Fetch immediately
+    fetchInvitations();
+    
+    // Then fetch every 30 seconds
+    _invitationFetchTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _debugLog('Periodic invitation fetch...');
+      fetchInvitations();
+    });
+  }
+
+  /// Stop periodic invitation fetching
+  void stopInvitationPolling() {
+    _invitationFetchTimer?.cancel();
+    _invitationFetchTimer = null;
+    _debugLog('Stopped invitation polling');
+  }
+
+  /// Fetch invitations from server
+  Future<void> fetchInvitations() async {
+    if (_apiUserId == null) {
+      _debugLog('Cannot fetch invitations: API user ID not set');
+      return;
+    }
+
+    try {
+      _debugLog('Fetching invitations for user $_apiUserId...');
+      
+      final invitationReads = await _apiService.getInvitations(int.parse(_apiUserId!));
+      _debugLog('Fetched ${invitationReads.length} invitations from server');
+      
+      // Convert API invitations to local Invitation objects
+      final fetchedInvitations = <Invitation>[];
+      
+      for (final invitationRead in invitationReads) {
+        try {
+          // Get peer name from sender/receiver info
+          String peerName = 'Unknown User';
+          bool sentByMe = invitationRead.senderId.toString() == _apiUserId;
+          
+          // If we sent it, peer is the receiver, otherwise peer is the sender
+          final peerId = sentByMe ? invitationRead.receiverId.toString() : invitationRead.senderId.toString();
+          
+          // Try to get peer name from users we've seen before
+          // For now, use a generic name - in a real app you'd fetch user details
+          if (sentByMe) {
+            peerName = 'User ${invitationRead.receiverId}';
+          } else {
+            peerName = 'User ${invitationRead.senderId}';
+          }
+          
+          final invitation = _apiService.invitationReadToInvitation(invitationRead);
+          final updatedInvitation = invitation.copyWith(
+            peerName: peerName,
+            peerId: peerId.toString(),
+            sentByMe: sentByMe,
+          );
+          
+          fetchedInvitations.add(updatedInvitation);
+        } catch (e) {
+          _debugLog('Error processing invitation ${invitationRead.id}: $e');
+        }
+      }
+      
+      // Update local invitations list
+      _invitations = fetchedInvitations;
+      _debugLog('Updated local invitations list with ${_invitations.length} invitations');
+      notifyListeners();
+      
+    } catch (e) {
+      _debugLog('Failed to fetch invitations: $e');
+      // Don't throw - keep existing local invitations if fetch fails
+    }
+  }
+
   /// Serialize iceBreakers to JSON string for API
   String _serializeIceBreakers(List<IceBreaker> iceBreakers) {
     final iceBreakerMap = iceBreakers.map((ib) => {
@@ -1551,5 +1645,13 @@ restaurant: activityName,
 
     _userRatings.add(userRating);
     notifyListeners();
+  }
+
+  /// Dispose resources
+  @override
+  void dispose() {
+    stopInvitationPolling();
+    super.dispose();
+    _debugLog('StorageService disposed');
   }
 }
