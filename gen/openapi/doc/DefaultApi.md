@@ -11,6 +11,7 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**createLocationLocationsPost**](DefaultApi.md#createlocationlocationspost) | **POST** /locations/ | Create Location
 [**createUserUsersPost**](DefaultApi.md#createuseruserspost) | **POST** /users/ | Create User
+[**deleteAvatarUsersUserIdAvatarDelete**](DefaultApi.md#deleteavatarusersuseridavatardelete) | **DELETE** /users/{user_id}/avatar | Delete Avatar
 [**getBatchLocationsLocationsBatchGet**](DefaultApi.md#getbatchlocationslocationsbatchget) | **GET** /locations/batch | Get Batch Locations
 [**getNearbyUsersUsersNearbyGet**](DefaultApi.md#getnearbyusersusersnearbyget) | **GET** /users/nearby | Get Nearby Users
 [**getUserLocationsLocationsUserIdGet**](DefaultApi.md#getuserlocationslocationsuseridget) | **GET** /locations/{user_id} | Get User Locations
@@ -19,6 +20,7 @@ Method | HTTP request | Description
 [**healthCheckHealthGet**](DefaultApi.md#healthcheckhealthget) | **GET** /health | Health Check
 [**rootGet**](DefaultApi.md#rootget) | **GET** / | Root
 [**updateUserUsersUserIdPut**](DefaultApi.md#updateuserusersuseridput) | **PUT** /users/{user_id} | Update User
+[**uploadAvatarUsersUserIdAvatarPost**](DefaultApi.md#uploadavatarusersuseridavatarpost) | **POST** /users/{user_id}/avatar | Upload Avatar
 [**visualizeDbVisualizeGet**](DefaultApi.md#visualizedbvisualizeget) | **GET** /visualize | Visualize Db
 
 
@@ -100,6 +102,47 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **deleteAvatarUsersUserIdAvatarDelete**
+> BuiltMap<String, JsonObject> deleteAvatarUsersUserIdAvatarDelete(userId)
+
+Delete Avatar
+
+### Example
+```dart
+import 'package:openapi/api.dart';
+
+final api = Openapi().getDefaultApi();
+final int userId = 56; // int | 
+
+try {
+    final response = api.deleteAvatarUsersUserIdAvatarDelete(userId);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DefaultApi->deleteAvatarUsersUserIdAvatarDelete: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **userId** | **int**|  | 
+
+### Return type
+
+[**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
@@ -436,6 +479,49 @@ No authorization required
 ### HTTP request headers
 
  - **Content-Type**: application/json
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **uploadAvatarUsersUserIdAvatarPost**
+> BuiltMap<String, JsonObject> uploadAvatarUsersUserIdAvatarPost(userId, file)
+
+Upload Avatar
+
+### Example
+```dart
+import 'package:openapi/api.dart';
+
+final api = Openapi().getDefaultApi();
+final int userId = 56; // int | 
+final MultipartFile file = BINARY_DATA_HERE; // MultipartFile | 
+
+try {
+    final response = api.uploadAvatarUsersUserIdAvatarPost(userId, file);
+    print(response);
+} on DioException catch (e) {
+    print('Exception when calling DefaultApi->uploadAvatarUsersUserIdAvatarPost: $e\n');
+}
+```
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **userId** | **int**|  | 
+ **file** | **MultipartFile**|  | 
+
+### Return type
+
+[**BuiltMap&lt;String, JsonObject&gt;**](JsonObject.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

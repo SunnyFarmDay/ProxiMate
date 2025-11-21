@@ -48,6 +48,9 @@ dependencies:
   # Built collection for API models
   built_collection: ^5.1.1
   
+  # HTTP client
+  dio: ^5.7.0
+  
   # Local OpenAPI client
   openapi:
     path: gen/openapi

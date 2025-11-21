@@ -67,6 +67,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 [*DefaultApi*](doc/DefaultApi.md) | [**createLocationLocationsPost**](doc/DefaultApi.md#createlocationlocationspost) | **POST** /locations/ | Create Location
 [*DefaultApi*](doc/DefaultApi.md) | [**createUserUsersPost**](doc/DefaultApi.md#createuseruserspost) | **POST** /users/ | Create User
+[*DefaultApi*](doc/DefaultApi.md) | [**deleteAvatarUsersUserIdAvatarDelete**](doc/DefaultApi.md#deleteavatarusersuseridavatardelete) | **DELETE** /users/{user_id}/avatar | Delete Avatar
 [*DefaultApi*](doc/DefaultApi.md) | [**getBatchLocationsLocationsBatchGet**](doc/DefaultApi.md#getbatchlocationslocationsbatchget) | **GET** /locations/batch | Get Batch Locations
 [*DefaultApi*](doc/DefaultApi.md) | [**getNearbyUsersUsersNearbyGet**](doc/DefaultApi.md#getnearbyusersusersnearbyget) | **GET** /users/nearby | Get Nearby Users
 [*DefaultApi*](doc/DefaultApi.md) | [**getUserLocationsLocationsUserIdGet**](doc/DefaultApi.md#getuserlocationslocationsuseridget) | **GET** /locations/{user_id} | Get User Locations
@@ -75,6 +76,7 @@ Class | Method | HTTP request | Description
 [*DefaultApi*](doc/DefaultApi.md) | [**healthCheckHealthGet**](doc/DefaultApi.md#healthcheckhealthget) | **GET** /health | Health Check
 [*DefaultApi*](doc/DefaultApi.md) | [**rootGet**](doc/DefaultApi.md#rootget) | **GET** / | Root
 [*DefaultApi*](doc/DefaultApi.md) | [**updateUserUsersUserIdPut**](doc/DefaultApi.md#updateuserusersuseridput) | **PUT** /users/{user_id} | Update User
+[*DefaultApi*](doc/DefaultApi.md) | [**uploadAvatarUsersUserIdAvatarPost**](doc/DefaultApi.md#uploadavatarusersuseridavatarpost) | **POST** /users/{user_id}/avatar | Upload Avatar
 [*DefaultApi*](doc/DefaultApi.md) | [**visualizeDbVisualizeGet**](doc/DefaultApi.md#visualizedbvisualizeget) | **GET** /visualize | Visualize Db
 
 

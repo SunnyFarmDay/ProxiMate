@@ -10,6 +10,7 @@ import '../models/activity.dart';
 import '../models/user_rating.dart';
 import 'api_service.dart';
 import 'location_service.dart';
+import 'package:openapi/openapi.dart';
 
 /// Storage service with persistent data using shared_preferences and API integration
 class StorageService extends ChangeNotifier {
@@ -17,7 +18,7 @@ class StorageService extends ChangeNotifier {
   static const String _keyConnections = 'connections';
   static const String _keyProfiles = 'profiles';
   static const String _keyApiUserId = 'api_user_id';
-  
+
   final ApiService _apiService = ApiService();
   late LocationService _locationService;
   Profile? _currentProfile;
@@ -29,7 +30,8 @@ class StorageService extends ChangeNotifier {
   List<Activity> _activities = [];
   final List<UserRating> _userRatings = [];
   Peer? _selectedPeer;
-  String? _selectedActivityId; // Currently selected activity for viewing invitations
+  String?
+  _selectedActivityId; // Currently selected activity for viewing invitations
   String? _apiUserId; // Store API user ID for backend integration
 
   Profile? get currentProfile => _currentProfile;
@@ -41,6 +43,7 @@ class StorageService extends ChangeNotifier {
   List<UserRating> get userRatings => _userRatings;
   Peer? get selectedPeer => _selectedPeer;
   String? get selectedActivityId => _selectedActivityId;
+  String? get apiUserId => _apiUserId;
 
   /// Initialize services that depend on each other
   void _initializeServices() {
@@ -60,7 +63,9 @@ class StorageService extends ChangeNotifier {
   // Get new friends (nearby peers who are not yet connections)
   List<Peer> get newFriends {
     final connectionIds = _connections.map((c) => c.toProfileId).toSet();
-    final filtered = _nearbyPeers.where((p) => !connectionIds.contains(p.id)).toList();
+    final filtered = _nearbyPeers
+        .where((p) => !connectionIds.contains(p.id))
+        .toList();
     // Sort by match score (highest first)
     filtered.sort((a, b) => b.matchScore.compareTo(a.matchScore));
     return filtered;
@@ -69,7 +74,9 @@ class StorageService extends ChangeNotifier {
   // Get your connections as peers
   List<Peer> get yourConnections {
     final connectionIds = _connections.map((c) => c.toProfileId).toSet();
-    final filtered = _nearbyPeers.where((p) => connectionIds.contains(p.id)).toList();
+    final filtered = _nearbyPeers
+        .where((p) => connectionIds.contains(p.id))
+        .toList();
     // Sort by match score (highest first)
     filtered.sort((a, b) => b.matchScore.compareTo(a.matchScore));
     return filtered;
@@ -104,18 +111,18 @@ class StorageService extends ChangeNotifier {
     try {
       // Initialize services first
       _initializeServices();
-      
+
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load API user ID first
       _apiUserId = prefs.getString(_keyApiUserId);
-      
+
       final profileJson = prefs.getString(_keyCurrentProfile);
-      
+
       if (profileJson != null) {
         final profileMap = jsonDecode(profileJson) as Map<String, dynamic>;
         _currentProfile = Profile.fromJson(profileMap);
-        
+
         // If we have an API user ID, try to sync the latest profile from backend
         if (_apiUserId != null) {
           try {
@@ -146,7 +153,8 @@ class StorageService extends ChangeNotifier {
       if (profilesJson != null) {
         final profilesMap = jsonDecode(profilesJson) as Map<String, dynamic>;
         _profiles = profilesMap.map(
-          (key, value) => MapEntry(key, Profile.fromJson(value as Map<String, dynamic>)),
+          (key, value) =>
+              MapEntry(key, Profile.fromJson(value as Map<String, dynamic>)),
         );
       }
 
@@ -165,7 +173,7 @@ class StorageService extends ChangeNotifier {
   Future<void> _persistCurrentProfile() async {
     try {
       if (_currentProfile == null) return;
-      
+
       final prefs = await SharedPreferences.getInstance();
       final profileJson = jsonEncode(_currentProfile!.toJson());
       await prefs.setString(_keyCurrentProfile, profileJson);
@@ -178,7 +186,9 @@ class StorageService extends ChangeNotifier {
   Future<void> _persistConnections() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final connectionsJson = jsonEncode(_connections.map((c) => c.toJson()).toList());
+      final connectionsJson = jsonEncode(
+        _connections.map((c) => c.toJson()).toList(),
+      );
       await prefs.setString(_keyConnections, connectionsJson);
     } catch (e) {
       debugPrint('Error saving connections: $e');
@@ -202,7 +212,7 @@ class StorageService extends ChangeNotifier {
   Future<void> _persistApiUserId() async {
     try {
       if (_apiUserId == null) return;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyApiUserId, _apiUserId!);
     } catch (e) {
@@ -231,22 +241,22 @@ class StorageService extends ChangeNotifier {
         id: '', // Will be replaced by API
         userName: userName,
       );
-      
+
       // Create user in API first
       final userCreate = _apiService.profileToUserCreate(tempProfile);
       final apiUserRead = await _apiService.createUser(userCreate);
       final apiProfile = _apiService.userReadToProfile(apiUserRead);
-      
+
       _currentProfile = apiProfile;
       _apiUserId = apiProfile.id;
-      
+
       // Persist both profile and API user ID
       await _persistCurrentProfile();
       await _persistApiUserId();
-      
+
       // Start location tracking for the new user
       _startLocationTracking();
-      
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error creating user in API: $e');
@@ -265,8 +275,16 @@ class StorageService extends ChangeNotifier {
     String? interests,
     String? background,
     String? profileImagePath,
+    bool skipApiSync = false,
   }) async {
     if (_currentProfile == null) return;
+
+    debugPrint(
+      'StorageService: updateProfile called with profileImagePath: $profileImagePath, skipApiSync: $skipApiSync',
+    );
+    debugPrint(
+      'StorageService: Current profileImagePath before update: ${_currentProfile!.profileImagePath}',
+    );
 
     // Update local profile first for immediate UI response
     _currentProfile = _currentProfile!.copyWith(
@@ -276,13 +294,20 @@ class StorageService extends ChangeNotifier {
       background: background,
       profileImagePath: profileImagePath,
     );
-    
-    // Try to sync with API if we have an API user ID
-    if (_apiUserId != null) {
+
+    debugPrint(
+      'StorageService: Profile updated locally, new profileImagePath: ${_currentProfile!.profileImagePath}',
+    );
+
+    // Try to sync with API if we have an API user ID and not skipping sync
+    if (_apiUserId != null && !skipApiSync) {
       try {
         final apiUserIdInt = int.parse(_apiUserId!);
         final userUpdate = _apiService.profileToUserUpdate(_currentProfile!);
-        final updatedUserRead = await _apiService.updateUser(apiUserIdInt, userUpdate);
+        final updatedUserRead = await _apiService.updateUser(
+          apiUserIdInt,
+          userUpdate,
+        );
         final updatedProfile = _apiService.userReadToProfile(updatedUserRead);
         _currentProfile = updatedProfile;
       } catch (e) {
@@ -290,7 +315,51 @@ class StorageService extends ChangeNotifier {
         // Continue with local update if API fails
       }
     }
-    
+
+    await _persistCurrentProfile();
+    notifyListeners();
+  }
+
+  /// Update only avatar URL without syncing other profile data
+  Future<void> updateAvatarOnly(String? avatarUrl) async {
+    if (_currentProfile == null) return;
+
+    debugPrint(
+      'StorageService: updateAvatarOnly called with avatarUrl: $avatarUrl',
+    );
+
+    // Update local profile immediately
+    _currentProfile = _currentProfile!.copyWith(profileImagePath: avatarUrl);
+
+    // Sync with API if we have an API user ID
+    if (_apiUserId != null) {
+      try {
+        final apiUserIdInt = int.parse(_apiUserId!);
+        // Create user update with only avatar URL changed
+        final userUpdate = UserUpdate(
+          (b) => b
+            ..username = _currentProfile!.userName
+            ..school = _currentProfile!.school ?? ''
+            ..major = _currentProfile!.major ?? ''
+            ..interests = _currentProfile!.interests ?? ''
+            ..bio = _currentProfile!.background ?? ''
+            ..avatarUrl = avatarUrl,
+        ); // This will be null for deletion
+
+        final updatedUserRead = await _apiService.updateUser(
+          apiUserIdInt,
+          userUpdate,
+        );
+        final updatedProfile = _apiService.userReadToProfile(updatedUserRead);
+        _currentProfile = updatedProfile;
+
+        debugPrint('StorageService: Avatar updated successfully in API');
+      } catch (e) {
+        debugPrint('Error updating avatar in API: $e');
+        // Continue with local update if API fails
+      }
+    }
+
     await _persistCurrentProfile();
     notifyListeners();
   }
@@ -307,10 +376,10 @@ class StorageService extends ChangeNotifier {
     _selectedPeer = null;
     _selectedActivityId = null;
     _apiUserId = null;
-    
+
     // Stop location tracking when user logs out
     _locationService.stopLocationTracking();
-    
+
     await _clearPersistedProfile();
     notifyListeners();
   }
@@ -357,19 +426,21 @@ class StorageService extends ChangeNotifier {
   /// Create or get the search activity (removes duplicates)
   Activity createOrGetSearchActivity() {
     const searchActivityName = 'Searching for peers to eat';
-    
+
     // Find and remove any existing search activities (clean up duplicates)
     final oldSearchActivities = _activities
         .where((a) => a.name == searchActivityName)
         .map((a) => a.id)
         .toList();
-    
+
     // Remove old search activities
     _activities.removeWhere((a) => a.name == searchActivityName);
-    
+
     // Also remove invitations associated with old search activities
-    _invitations.removeWhere((inv) => oldSearchActivities.contains(inv.activityId));
-    
+    _invitations.removeWhere(
+      (inv) => oldSearchActivities.contains(inv.activityId),
+    );
+
     // Create a new search activity
     final activity = Activity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -377,11 +448,11 @@ class StorageService extends ChangeNotifier {
       description: 'Looking for people nearby who want to grab food together',
       createdAt: DateTime.now(),
     );
-    
+
     _activities.add(activity);
     _selectedActivityId = activity.id;
     notifyListeners();
-    
+
     return activity;
   }
 
@@ -424,8 +495,13 @@ class StorageService extends ChangeNotifier {
 
       // Convert UserReadWithDistance objects to Peer objects
       final peers = nearbyUsersWithDistance
-          .where((userWithDistance) => userWithDistance.id != userId) // Exclude self
-          .map((userWithDistance) => _apiService.userReadWithDistanceToPeer(userWithDistance))
+          .where(
+            (userWithDistance) => userWithDistance.id != userId,
+          ) // Exclude self
+          .map(
+            (userWithDistance) =>
+                _apiService.userReadWithDistanceToPeer(userWithDistance),
+          )
           .map((peer) => _applyMatchScore(peer))
           .toList();
 
@@ -434,7 +510,7 @@ class StorageService extends ChangeNotifier {
         // Primary sort by distance
         final distanceCompare = a.distance.compareTo(b.distance);
         if (distanceCompare != 0) return distanceCompare;
-        
+
         // Secondary sort by match score (descending)
         return b.matchScore.compareTo(a.matchScore);
       });
@@ -443,7 +519,6 @@ class StorageService extends ChangeNotifier {
       notifyListeners();
       _debugLog('Found ${peers.length} nearby peers');
       return peers;
-
     } catch (e) {
       _debugLog('Error searching for nearby peers: $e');
       // Fall back to mock data on API failure
@@ -461,12 +536,10 @@ class StorageService extends ChangeNotifier {
     return mockPeers;
   }
 
-
-
   /// Apply match score to a peer based on current user profile
   Peer _applyMatchScore(Peer peer) {
     if (_currentProfile == null) return peer;
-    
+
     final matchScore = Peer.calculateMatchScore(_currentProfile!, peer);
     return Peer(
       id: peer.id,
@@ -572,9 +645,11 @@ class StorageService extends ChangeNotifier {
 
     // Calculate match scores and sort by distance
     return peers
-        .map((peer) => peer.copyWith(
-              matchScore: Peer.calculateMatchScore(_currentProfile!, peer),
-            ))
+        .map(
+          (peer) => peer.copyWith(
+            matchScore: Peer.calculateMatchScore(_currentProfile!, peer),
+          ),
+        )
         .toList()
       ..sort((a, b) => a.distance.compareTo(b.distance));
   }
@@ -709,11 +784,12 @@ class StorageService extends ChangeNotifier {
     // Helper to avoid duplicate connections
     final addedConnections = <String>{};
     final mockConnections = <Map<String, String>>[];
-    
+
     void addConnection(String from, String to) {
       final key1 = '$from-$to';
       final key2 = '$to-$from';
-      if (!addedConnections.contains(key1) && !addedConnections.contains(key2)) {
+      if (!addedConnections.contains(key1) &&
+          !addedConnections.contains(key2)) {
         mockConnections.add({'from': from, 'to': to});
         addedConnections.add(key1);
       }
@@ -724,61 +800,58 @@ class StorageService extends ChangeNotifier {
     addConnection('mock_0', 'mock_2');
     addConnection('mock_0', 'mock_5');
     addConnection('mock_0', 'mock_8');
-    
+
     // mock_1 (Sarah Kim): friends with you, mock_0, mock_3, mock_9 (4 friends)
     addConnection('mock_1', 'mock_3');
     addConnection('mock_1', 'mock_9');
-    
+
     // mock_2 (Mike Johnson): friends with mock_0, mock_4, mock_11 (3 friends)
     addConnection('mock_2', 'mock_4');
     addConnection('mock_2', 'mock_11');
-    
+
     // mock_3 (Emma Davis): friends with you, mock_1, mock_5, mock_6, mock_10 (5 friends)
     addConnection('mock_3', 'mock_5');
     addConnection('mock_3', 'mock_6');
     addConnection('mock_3', 'mock_10');
-    
+
     // mock_4 (James Wilson): friends with mock_2, mock_6, mock_12 (3 friends)
     addConnection('mock_4', 'mock_6');
     addConnection('mock_4', 'mock_12');
-    
+
     // mock_5 (Lisa Martinez): friends with you, mock_0, mock_3, mock_7, mock_9, mock_13 (6 friends - popular!)
     addConnection('mock_5', 'mock_7');
     addConnection('mock_5', 'mock_9');
     addConnection('mock_5', 'mock_13');
-    
+
     // mock_6 (Tom Anderson): friends with mock_3, mock_4 (2 friends)
     // Already connected above
-    
+
     // mock_7 (Nina Patel): friends with you, mock_5, mock_11 (3 friends)
     addConnection('mock_7', 'mock_11');
-    
+
     // mock_8 (David Lee): friends with mock_0, mock_10 (2 friends)
     addConnection('mock_8', 'mock_10');
-    
+
     // mock_9 (Rachel Green): friends with mock_1, mock_5, mock_12, mock_13 (4 friends)
     addConnection('mock_9', 'mock_12');
     addConnection('mock_9', 'mock_13');
-    
+
     // mock_10 (Kevin Wang): friends with mock_3, mock_8 (2 friends)
     // Already connected above
-    
+
     // mock_11 (Sophia Torres): friends with mock_2, mock_7, mock_13 (3 friends)
     addConnection('mock_11', 'mock_13');
-    
+
     // mock_12 (Ryan Cooper): friends with mock_4, mock_9 (2 friends)
     // Already connected above
-    
+
     // mock_13 (Maya Patel): friends with you, mock_5, mock_9, mock_11 (4 friends)
     // Already connected above
-    
+
     // mock_14 (Chris Martin): friends with mock_0 (1 friend - introvert!)
     addConnection('mock_14', 'mock_0');
 
-    return {
-      'profiles': mockProfiles,
-      'connections': mockConnections,
-    };
+    return {'profiles': mockProfiles, 'connections': mockConnections};
   }
 
   /// Get mock network nodes for a given connection profile ID
@@ -829,17 +902,20 @@ class StorageService extends ChangeNotifier {
     final directProfiles = directConnectionKeys
         .map((key) => profiles[key] as Map<String, dynamic>)
         .toList();
-    
+
     final indirectProfiles = indirectConnectionKeys
-        .map((key) => {
-          ...profiles[key] as Map<String, dynamic>,
-          'connectedThrough': directConnectionKeys.firstWhere(
-            (directKey) => connections.any((c) =>
-              (c['from'] == directKey && c['to'] == key) ||
-              (c['to'] == directKey && c['from'] == key)
+        .map(
+          (key) => {
+            ...profiles[key] as Map<String, dynamic>,
+            'connectedThrough': directConnectionKeys.firstWhere(
+              (directKey) => connections.any(
+                (c) =>
+                    (c['from'] == directKey && c['to'] == key) ||
+                    (c['to'] == directKey && c['from'] == key),
+              ),
             ),
-          ),
-        })
+          },
+        )
         .toList();
 
     return {
@@ -899,7 +975,8 @@ class StorageService extends ChangeNotifier {
         answer: 'This helps you understand their passion and motivation',
       ),
       IceBreaker(
-        question: 'I see you\'re interested in ${peer.interests.split(',').first.trim()}. How did you get into that?',
+        question:
+            'I see you\'re interested in ${peer.interests.split(',').first.trim()}. How did you get into that?',
         answer: 'Shows you read their profile and care about their interests',
       ),
       IceBreaker(
@@ -912,7 +989,8 @@ class StorageService extends ChangeNotifier {
     final otherQuestions = [
       // Values and personal philosophy
       IceBreaker(
-        question: 'What\'s a core value or principle that guides your decisions?',
+        question:
+            'What\'s a core value or principle that guides your decisions?',
         answer: 'Helps understand what matters most to them',
       ),
       IceBreaker(
@@ -920,11 +998,13 @@ class StorageService extends ChangeNotifier {
         answer: 'Reveals their priorities and aspirations',
       ),
       IceBreaker(
-        question: 'If you could change one thing about the world, what would it be?',
+        question:
+            'If you could change one thing about the world, what would it be?',
         answer: 'Shows their values and what they care about',
       ),
       IceBreaker(
-        question: 'What\'s something you believe that most people disagree with?',
+        question:
+            'What\'s something you believe that most people disagree with?',
         answer: 'Encourages authentic conversation and perspective sharing',
       ),
       // Background and experiences
@@ -933,7 +1013,8 @@ class StorageService extends ChangeNotifier {
         answer: 'Invites deeper storytelling about their journey',
       ),
       IceBreaker(
-        question: 'How has your background influenced your career or life goals?',
+        question:
+            'How has your background influenced your career or life goals?',
         answer: 'Explores the connection between past and future',
       ),
       IceBreaker(
@@ -941,31 +1022,37 @@ class StorageService extends ChangeNotifier {
         answer: 'Highlights resilience and personal growth',
       ),
       IceBreaker(
-        question: 'Is there a family tradition or cultural practice that\'s meaningful to you?',
+        question:
+            'Is there a family tradition or cultural practice that\'s meaningful to you?',
         answer: 'Opens discussion about heritage and identity',
       ),
       // Fun and personality
       IceBreaker(
-        question: 'What\'s a fun fact about yourself that most people don\'t know?',
+        question:
+            'What\'s a fun fact about yourself that most people don\'t know?',
         answer: 'Helps break the ice with something unexpected',
       ),
       IceBreaker(
-        question: 'If you could have dinner with anyone, dead or alive, who would it be?',
+        question:
+            'If you could have dinner with anyone, dead or alive, who would it be?',
         answer: 'Reveals their inspirations and interests',
       ),
       IceBreaker(
-        question: 'What\'s something you\'re currently trying to learn or get better at?',
+        question:
+            'What\'s something you\'re currently trying to learn or get better at?',
         answer: 'Shows growth mindset and current interests',
       ),
       IceBreaker(
-        question: 'If you had a free year to do anything, how would you spend it?',
+        question:
+            'If you had a free year to do anything, how would you spend it?',
         answer: 'Explores dreams and priorities',
       ),
     ];
 
     // Randomly select 2 questions from other questions
     final random = Random();
-    final shuffledOther = List<IceBreaker>.from(otherQuestions)..shuffle(random);
+    final shuffledOther = List<IceBreaker>.from(otherQuestions)
+      ..shuffle(random);
     final selectedOther = shuffledOther.take(2).toList();
 
     // Combine common interest questions with randomly selected questions
@@ -984,7 +1071,7 @@ class StorageService extends ChangeNotifier {
     final hasAcceptedForActivity = _invitations.any(
       (i) => i.isAccepted && i.activityId == activityId && i.id != invitationId,
     );
-    
+
     if (hasAcceptedForActivity) {
       // Already have an accepted invitation for this activity, can't accept another
       return;
@@ -997,9 +1084,9 @@ class StorageService extends ChangeNotifier {
 
     // Auto-decline all OTHER received invitations for the same activity
     for (int i = 0; i < _invitations.length; i++) {
-      if (i != index && 
-          _invitations[i].activityId == activityId && 
-          _invitations[i].isPending && 
+      if (i != index &&
+          _invitations[i].activityId == activityId &&
+          _invitations[i].isPending &&
           !_invitations[i].sentByMe) {
         _invitations[i] = _invitations[i].copyWith(
           status: InvitationStatus.declined,
@@ -1009,9 +1096,7 @@ class StorageService extends ChangeNotifier {
 
     // Delete all unanswered SENT invitations for the same activity
     _invitations.removeWhere(
-      (inv) => inv.activityId == activityId && 
-               inv.sentByMe && 
-               inv.isPending,
+      (inv) => inv.activityId == activityId && inv.sentByMe && inv.isPending,
     );
 
     notifyListeners();
@@ -1046,9 +1131,9 @@ class StorageService extends ChangeNotifier {
 
     // Auto-decline all OTHER received invitations for the same activity
     for (int i = 0; i < _invitations.length; i++) {
-      if (i != index && 
-          _invitations[i].activityId == activityId && 
-          _invitations[i].isPending && 
+      if (i != index &&
+          _invitations[i].activityId == activityId &&
+          _invitations[i].isPending &&
           !_invitations[i].sentByMe) {
         _invitations[i] = _invitations[i].copyWith(
           status: InvitationStatus.declined,
@@ -1058,10 +1143,11 @@ class StorageService extends ChangeNotifier {
 
     // Delete all other unanswered SENT invitations for the same activity
     _invitations.removeWhere(
-      (inv) => inv.activityId == activityId && 
-               inv.sentByMe && 
-               inv.isPending &&
-               inv.id != invitationId,
+      (inv) =>
+          inv.activityId == activityId &&
+          inv.sentByMe &&
+          inv.isPending &&
+          inv.id != invitationId,
     );
 
     notifyListeners();
@@ -1090,14 +1176,26 @@ class StorageService extends ChangeNotifier {
 
     // Get a random peer from nearby peers, or create a full mock peer
     Peer mockPeer;
-    
+
     if (_nearbyPeers.isNotEmpty) {
       mockPeer = _nearbyPeers[DateTime.now().millisecond % _nearbyPeers.length];
     } else {
       // Create a full mock peer with complete profile
-      final mockNames = ['Jessica Lee', 'Ryan Martinez', 'Olivia Taylor', 'James Anderson', 'Emma White'];
+      final mockNames = [
+        'Jessica Lee',
+        'Ryan Martinez',
+        'Olivia Taylor',
+        'James Anderson',
+        'Emma White',
+      ];
       final mockSchools = ['MIT', 'Stanford', 'Harvard', 'UC Berkeley', 'Yale'];
-      final mockMajors = ['Computer Science', 'Engineering', 'Business', 'Biology', 'Psychology'];
+      final mockMajors = [
+        'Computer Science',
+        'Engineering',
+        'Business',
+        'Biology',
+        'Psychology',
+      ];
       final mockInterestsOptions = [
         'Coding, Gaming, Music',
         'Sports, Travel, Photography',
@@ -1112,10 +1210,10 @@ class StorageService extends ChangeNotifier {
         'Undergrad exploring different career paths',
         'International student wanting to connect with locals',
       ];
-      
+
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final randomIndex = timestamp % mockNames.length;
-      
+
       mockPeer = Peer(
         id: 'mock_$timestamp',
         name: mockNames[randomIndex],
@@ -1127,7 +1225,7 @@ class StorageService extends ChangeNotifier {
         wantsToEat: true,
         matchScore: 0.6 + (randomIndex * 0.05),
       );
-      
+
       // Add the mock peer to nearby peers so they appear in the network
       _nearbyPeers.add(mockPeer);
     }
@@ -1141,8 +1239,9 @@ class StorageService extends ChangeNotifier {
       'Thai Garden',
       'Mediterranean Grill',
     ];
-    
-    final restaurant = restaurants[DateTime.now().millisecond % restaurants.length];
+
+    final restaurant =
+        restaurants[DateTime.now().millisecond % restaurants.length];
 
     // Generate ice breakers for the mock peer (as if they sent them)
     final iceBreakers = _generateIceBreakers(mockPeer);
@@ -1252,7 +1351,7 @@ class StorageService extends ChangeNotifier {
 
     final invitation = _invitations.firstWhere((i) => i.id == invitationId);
     final peer = getPeerById(invitation.peerId);
-    
+
     if (peer == null) return;
 
     // Check if already connected
@@ -1283,7 +1382,7 @@ class StorageService extends ChangeNotifier {
     );
 
     _connections.add(connection);
-    
+
     // Mark invitation as name card collected
     final invIndex = _invitations.indexWhere((i) => i.id == invitationId);
     if (invIndex != -1) {
@@ -1291,7 +1390,7 @@ class StorageService extends ChangeNotifier {
         nameCardCollected: true,
       );
     }
-    
+
     await _persistConnections();
     await _persistProfiles();
     notifyListeners();
@@ -1317,11 +1416,11 @@ class StorageService extends ChangeNotifier {
   /// Mark match as not good and decline
   Future<void> markNotGoodMatch(String invitationId) async {
     await declineInvitation(invitationId);
-    
+
     // Remove from chat rooms
     final invitation = _invitations.firstWhere((i) => i.id == invitationId);
     _chatRooms.removeWhere((c) => c.peerId == invitation.peerId);
-    
+
     notifyListeners();
   }
 

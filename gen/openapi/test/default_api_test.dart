@@ -21,6 +21,13 @@ void main() {
       // TODO
     });
 
+    // Delete Avatar
+    //
+    //Future<BuiltMap<String, JsonObject>> deleteAvatarUsersUserIdAvatarDelete(int userId) async
+    test('test deleteAvatarUsersUserIdAvatarDelete', () async {
+      // TODO
+    });
+
     // Get Batch Locations
     //
     //Future<BuiltList<LocationRead>> getBatchLocationsLocationsBatchGet(String userIds) async
@@ -74,6 +81,13 @@ void main() {
     //
     //Future<UserRead> updateUserUsersUserIdPut(int userId, UserUpdate userUpdate) async
     test('test updateUserUsersUserIdPut', () async {
+      // TODO
+    });
+
+    // Upload Avatar
+    //
+    //Future<BuiltMap<String, JsonObject>> uploadAvatarUsersUserIdAvatarPost(int userId, MultipartFile file) async
+    test('test uploadAvatarUsersUserIdAvatarPost', () async {
       // TODO
     });
 

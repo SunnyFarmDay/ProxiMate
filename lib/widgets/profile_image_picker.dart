@@ -4,21 +4,25 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import '../services/storage_service.dart';
+import '../services/api_service.dart';
 import 'circular_image_cropper.dart';
 import 'web_image_cropper.dart';
-
 
 /// Widget for picking and cropping profile images
 class ProfileImagePicker extends StatefulWidget {
   final String? currentImagePath;
   final Function(String?) onImageSelected;
   final double radius;
+  final bool enableServerUpload;
 
   const ProfileImagePicker({
     super.key,
     this.currentImagePath,
     required this.onImageSelected,
     this.radius = 60,
+    this.enableServerUpload = true,
   });
 
   @override
@@ -26,7 +30,7 @@ class ProfileImagePicker extends StatefulWidget {
 }
 
 class _ProfileImagePickerState extends State<ProfileImagePicker> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  bool _isUploading = false;
 
   Future<void> _pickAndCropImage() async {
     try {
@@ -37,8 +41,10 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
         return;
       }
 
-      debugPrint('Picking image from: ${source == ImageSource.camera ? 'Camera' : 'Gallery'}');
-      
+      debugPrint(
+        'Picking image from: ${source == ImageSource.camera ? 'Camera' : 'Gallery'}',
+      );
+
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: source,
@@ -53,17 +59,19 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
       }
 
       debugPrint('Image picked: ${pickedFile.path}');
-      
+
       debugPrint('Image picked: ${pickedFile.path}');
-      
+
       // On web, show the web cropper
       if (kIsWeb) {
         debugPrint('Web platform detected, showing web cropper');
-        debugPrint('XFile details - path: ${pickedFile.path}, name: ${pickedFile.name}');
-        
+        debugPrint(
+          'XFile details - path: ${pickedFile.path}, name: ${pickedFile.name}',
+        );
+
         try {
           debugPrint('Showing WebImageCropper in dialog...');
-          
+
           final croppedBytes = await showDialog<Uint8List>(
             context: context,
             barrierDismissible: false,
@@ -84,24 +92,32 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
               );
             },
           );
-          
-          debugPrint('Navigation returned, croppedBytes: ${croppedBytes?.length ?? "null"}');
-          
+
+          debugPrint(
+            'Navigation returned, croppedBytes: ${croppedBytes?.length ?? "null"}',
+          );
+
           if (croppedBytes != null) {
-            // Convert bytes to base64 data URL for web storage
-            final base64Image = base64Encode(croppedBytes);
-            final dataUrl = 'data:image/png;base64,$base64Image';
-            debugPrint('Image cropped on web, data URL length: ${dataUrl.length}');
-            widget.onImageSelected(dataUrl);
-            
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Profile image updated'),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  duration: const Duration(seconds: 1),
-                ),
+            if (widget.enableServerUpload) {
+              await _uploadImageToServer(croppedBytes);
+            } else {
+              // Convert bytes to base64 data URL for local storage
+              final base64Image = base64Encode(croppedBytes);
+              final dataUrl = 'data:image/png;base64,$base64Image';
+              debugPrint(
+                'Image cropped on web, data URL length: ${dataUrl.length}',
               );
+              widget.onImageSelected(dataUrl);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Profile image updated'),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
             }
           }
         } catch (webCropError, stackTrace) {
@@ -118,17 +134,19 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
         }
         return;
       }
-      
+
       // Mobile platform - check file and show cropper
       final file = File(pickedFile.path);
       final exists = await file.exists();
-      debugPrint('Picked file exists: $exists, size: ${exists ? await file.length() : 0}');
+      debugPrint(
+        'Picked file exists: $exists, size: ${exists ? await file.length() : 0}',
+      );
 
       // Navigate to custom circular cropper
       debugPrint('Starting image crop...');
-      
+
       if (!context.mounted) return;
-      
+
       final croppedFile = await Navigator.of(context).push<File>(
         MaterialPageRoute(
           builder: (context) => CircularImageCropper(
@@ -147,16 +165,21 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
 
       if (croppedFile != null && croppedFile.path.isNotEmpty) {
         debugPrint('Image cropped successfully: ${croppedFile.path}');
-        widget.onImageSelected(croppedFile.path);
-        
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Profile image updated'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              duration: const Duration(seconds: 1),
-            ),
-          );
+
+        if (widget.enableServerUpload) {
+          await _uploadImageToServer(croppedFile);
+        } else {
+          widget.onImageSelected(croppedFile.path);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile image updated'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          }
         }
       } else {
         debugPrint('Image crop cancelled - using original');
@@ -214,11 +237,21 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             ),
             if (widget.currentImagePath != null)
               ListTile(
-                leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
-                title: Text('Remove Photo', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                onTap: () {
+                leading: Icon(
+                  Icons.delete,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  'Remove Photo',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+                onTap: () async {
                   Navigator.pop(context);
-                  widget.onImageSelected(null);
+                  if (widget.enableServerUpload) {
+                    await _deleteCurrentAvatar();
+                  } else {
+                    widget.onImageSelected(null);
+                  }
                 },
               ),
             ListTile(
@@ -232,26 +265,144 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
     );
   }
 
+  /// Upload image to server and get URL
+  Future<void> _uploadImageToServer(dynamic imageFile) async {
+    if (!mounted) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final storageService = context.read<StorageService>();
+      final apiUserId = storageService.apiUserId;
+
+      if (apiUserId == null) {
+        throw Exception('User not logged in');
+      }
+
+      final apiService = ApiService();
+      final avatarUrl = await apiService.uploadAvatar(
+        int.parse(apiUserId),
+        imageFile,
+      );
+
+      if (avatarUrl != null) {
+        widget.onImageSelected(avatarUrl);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile image updated successfully'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to get avatar URL from server');
+      }
+    } catch (e) {
+      debugPrint('Error uploading avatar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload image: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  /// Delete current avatar from server
+  Future<void> _deleteCurrentAvatar() async {
+    if (!mounted) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      final storageService = context.read<StorageService>();
+      final apiUserId = storageService.apiUserId;
+
+      if (apiUserId == null) {
+        throw Exception('User not logged in');
+      }
+
+      final apiService = ApiService();
+      final success = await apiService.deleteAvatar(int.parse(apiUserId));
+
+      if (success) {
+        debugPrint('Avatar deletion successful, calling onImageSelected(null)');
+
+        // Call onImageSelected first to update local state immediately
+        widget.onImageSelected(null);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Profile image removed'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to delete avatar from server');
+      }
+    } catch (e) {
+      debugPrint('Error deleting avatar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to remove image: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    debugPrint('ProfileImagePicker build - currentImagePath: ${widget.currentImagePath}');
-    
+    debugPrint(
+      'ProfileImagePicker build - currentImagePath: ${widget.currentImagePath}',
+    );
+
     return GestureDetector(
-      onTap: () => _showImageOptions(),
+      onTap: _isUploading ? null : () => _showImageOptions(),
       child: Stack(
         children: [
           CircleAvatar(
-            key: ValueKey(widget.currentImagePath), // Force rebuild when path changes
+            key: ValueKey(
+              widget.currentImagePath,
+            ), // Force rebuild when path changes
             radius: widget.radius,
             backgroundColor: Theme.of(context).primaryColor,
-            backgroundImage: widget.currentImagePath != null && widget.currentImagePath!.isNotEmpty
+            backgroundImage:
+                widget.currentImagePath != null &&
+                    widget.currentImagePath!.isNotEmpty
                 ? (kIsWeb
-                    ? (widget.currentImagePath!.startsWith('data:')
-                        ? MemoryImage(base64Decode(widget.currentImagePath!.split(',')[1]))
-                        : NetworkImage(widget.currentImagePath!))
-                    : FileImage(File(widget.currentImagePath!)))
+                      ? (widget.currentImagePath!.startsWith('data:')
+                            ? MemoryImage(
+                                base64Decode(
+                                  widget.currentImagePath!.split(',')[1],
+                                ),
+                              )
+                            : NetworkImage(widget.currentImagePath!))
+                      : FileImage(File(widget.currentImagePath!)))
                 : null,
-            child: widget.currentImagePath == null || widget.currentImagePath!.isEmpty
+            child:
+                widget.currentImagePath == null ||
+                    widget.currentImagePath!.isEmpty
                 ? Icon(
                     Icons.person,
                     size: widget.radius * 1.2,
@@ -264,19 +415,29 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
             bottom: 0,
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
+                color: _isUploading
+                    ? Colors.grey
+                    : Theme.of(context).primaryColor,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
+                border: Border.all(color: Colors.white, width: 2),
               ),
               padding: const EdgeInsets.all(8),
-              child: Icon(
-                widget.currentImagePath == null ? Icons.add_a_photo : Icons.edit,
-                color: Colors.white,
-                size: widget.radius * 0.35,
-              ),
+              child: _isUploading
+                  ? SizedBox(
+                      width: widget.radius * 0.35,
+                      height: widget.radius * 0.35,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      widget.currentImagePath == null
+                          ? Icons.add_a_photo
+                          : Icons.edit,
+                      color: Colors.white,
+                      size: widget.radius * 0.35,
+                    ),
             ),
           ),
         ],

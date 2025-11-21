@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:openapi/openapi.dart';
+import 'package:dio/dio.dart';
 import '../models/profile.dart';
 import '../models/peer.dart';
 
@@ -12,12 +13,12 @@ class ApiService {
   String _baseUrl;
   final int _maxRetries;
   final Duration _timeout;
-  
+
   ApiService({
     String baseUrl = 'http://localhost:8000',
     int maxRetries = 3,
     Duration timeout = const Duration(seconds: 30),
-  }) : _baseUrl = baseUrl, 
+  }) : _baseUrl = baseUrl,
        _maxRetries = maxRetries,
        _timeout = timeout {
     _initializeApi();
@@ -73,7 +74,8 @@ class ApiService {
     }
 
     _debugLog('$operationName failed after $_maxRetries attempts');
-    throw lastException ?? Exception('Operation failed after $_maxRetries attempts');
+    throw lastException ??
+        Exception('Operation failed after $_maxRetries attempts');
   }
 
   Future<UserRead> createUser(UserCreate user) async {
@@ -86,7 +88,8 @@ class ApiService {
 
   Future<UserRead> updateUser(int userId, UserUpdate userUpdate) async {
     final response = await _executeWithRetry(
-      () => _api.updateUserUsersUserIdPut(userId: userId, userUpdate: userUpdate),
+      () =>
+          _api.updateUserUsersUserIdPut(userId: userId, userUpdate: userUpdate),
       'Update User',
     );
     return response.data!;
@@ -150,34 +153,43 @@ class ApiService {
       () => _api.getUsersUsersGet(),
       'Get All Users',
     );
-    
+
     // Apply filtering client-side for now (backend filtering not available)
     var users = response.data!;
-    
+
     if (school != null && school.isNotEmpty) {
       users = users.rebuild((b) => b.clear());
-      final filtered = response.data!.where((u) => 
-        u.school?.toLowerCase().contains(school.toLowerCase()) == true
-      ).toList();
+      final filtered = response.data!
+          .where(
+            (u) =>
+                u.school?.toLowerCase().contains(school.toLowerCase()) == true,
+          )
+          .toList();
       users = BuiltList<UserRead>(filtered);
     }
-    
+
     if (major != null && major.isNotEmpty) {
       users = users.rebuild((b) => b.clear());
-      final filtered = response.data!.where((u) => 
-        u.major?.toLowerCase().contains(major.toLowerCase()) == true
-      ).toList();
+      final filtered = response.data!
+          .where(
+            (u) => u.major?.toLowerCase().contains(major.toLowerCase()) == true,
+          )
+          .toList();
       users = BuiltList<UserRead>(filtered);
     }
-    
+
     if (interests != null && interests.isNotEmpty) {
       users = users.rebuild((b) => b.clear());
-      final filtered = response.data!.where((u) => 
-        u.interests?.toLowerCase().contains(interests.toLowerCase()) == true
-      ).toList();
+      final filtered = response.data!
+          .where(
+            (u) =>
+                u.interests?.toLowerCase().contains(interests.toLowerCase()) ==
+                true,
+          )
+          .toList();
       users = BuiltList<UserRead>(filtered);
     }
-    
+
     return users;
   }
 
@@ -203,9 +215,7 @@ class ApiService {
   /// Get locations for multiple users in batch
   Future<BuiltList<LocationRead>> getBatchLocations(List<int> userIds) async {
     final response = await _executeWithRetry(
-      () => _api.getBatchLocationsLocationsBatchGet(
-        userIds: userIds.join(','),
-      ),
+      () => _api.getBatchLocationsLocationsBatchGet(userIds: userIds.join(',')),
       'Get Batch Locations',
     );
     return response.data!;
@@ -219,31 +229,41 @@ class ApiService {
       major: (user.major?.isEmpty ?? true) ? null : user.major,
       interests: (user.interests?.isEmpty ?? true) ? null : user.interests,
       background: (user.bio?.isEmpty ?? true) ? null : user.bio,
-      profileImagePath: (user.avatarUrl?.isEmpty ?? true) ? null : user.avatarUrl,
+      profileImagePath: (user.avatarUrl?.isEmpty ?? true)
+          ? null
+          : user.avatarUrl,
     );
   }
 
   UserCreate profileToUserCreate(Profile profile) {
-    return UserCreate((b) => b
-      ..username = profile.userName
-      ..school = profile.school ?? ''
-      ..major = profile.major ?? ''
-      ..interests = profile.interests ?? ''
-      ..bio = profile.background ?? ''
-      ..avatarUrl = profile.profileImagePath ?? '');
+    return UserCreate(
+      (b) => b
+        ..username = profile.userName
+        ..school = profile.school ?? ''
+        ..major = profile.major ?? ''
+        ..interests = profile.interests ?? ''
+        ..bio = profile.background ?? ''
+        ..avatarUrl = profile.profileImagePath ?? '',
+    );
   }
 
   UserUpdate profileToUserUpdate(Profile profile) {
-    return UserUpdate((b) => b
-      ..username = profile.userName
-      ..school = profile.school ?? ''
-      ..major = profile.major ?? ''
-      ..interests = profile.interests ?? ''
-      ..bio = profile.background ?? ''
-      ..avatarUrl = profile.profileImagePath ?? '');
+    return UserUpdate(
+      (b) => b
+        ..username = profile.userName
+        ..school = profile.school ?? ''
+        ..major = profile.major ?? ''
+        ..interests = profile.interests ?? ''
+        ..bio = profile.background ?? ''
+        ..avatarUrl = profile.profileImagePath,
+    );
   }
 
-  Peer userReadToPeer(UserRead user, LocationRead? location, {double? distance}) {
+  Peer userReadToPeer(
+    UserRead user,
+    LocationRead? location, {
+    double? distance,
+  }) {
     return Peer(
       id: user.id.toString(),
       name: user.username,
@@ -269,21 +289,18 @@ class ApiService {
     );
   }
 
-  double calculateDistance(
-    double lat1, 
-    double lon1, 
-    double lat2, 
-    double lon2,
-  ) {
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371; // Earth's radius in kilometers
 
     final double dLat = _toRadians(lat2 - lat1);
     final double dLon = _toRadians(lon2 - lon1);
 
-    final double a = 
+    final double a =
         (dLat / 2).sin() * (dLat / 2).sin() +
-        lat1.toRadians().cos() * lat2.toRadians().cos() *
-        (dLon / 2).sin() * (dLon / 2).sin();
+        lat1.toRadians().cos() *
+            lat2.toRadians().cos() *
+            (dLon / 2).sin() *
+            (dLon / 2).sin();
 
     final double c = 2 * a.sqrt().asin();
 
@@ -292,6 +309,99 @@ class ApiService {
 
   double _toRadians(double degrees) {
     return degrees * (3.14159265359 / 180);
+  }
+
+  /// Upload avatar image for a user
+  Future<String?> uploadAvatar(int userId, dynamic imageFile) async {
+    try {
+      _debugLog('Starting avatar upload for user $userId');
+
+      MultipartFile multipartFile;
+
+      if (kIsWeb) {
+        // Handle web platform - expect Uint8List
+        if (imageFile is Uint8List) {
+          multipartFile = MultipartFile.fromBytes(
+            imageFile,
+            filename: 'avatar_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
+        } else {
+          throw Exception('Invalid image file type for web platform');
+        }
+      } else {
+        // Handle mobile platform - expect File
+        if (imageFile is File) {
+          multipartFile = await MultipartFile.fromFile(
+            imageFile.path,
+            filename: 'avatar_${DateTime.now().millisecondsSinceEpoch}.png',
+          );
+        } else {
+          throw Exception('Invalid image file type for mobile platform');
+        }
+      }
+
+      final response = await _executeWithRetry(
+        () => _api.uploadAvatarUsersUserIdAvatarPost(
+          userId: userId,
+          file: multipartFile,
+        ),
+        'Upload Avatar',
+      );
+
+      // Extract avatar URL from response
+      final responseData = response.data;
+      _debugLog('Avatar upload response type: ${responseData.runtimeType}');
+      _debugLog('Avatar upload response data: $responseData');
+
+      if (responseData != null && responseData.containsKey('avatar_url')) {
+        final avatarUrlValue = responseData['avatar_url'];
+        _debugLog('Avatar URL value type: ${avatarUrlValue.runtimeType}');
+        _debugLog('Avatar URL value: $avatarUrlValue');
+
+        String? avatarUrl;
+
+        // Handle different response types
+        if (avatarUrlValue.runtimeType == String) {
+          avatarUrl = avatarUrlValue.toString();
+        } else if (avatarUrlValue != null) {
+          // Convert JsonObject to String
+          avatarUrl = avatarUrlValue.toString();
+        }
+
+        _debugLog('Avatar uploaded successfully: $avatarUrl');
+        return avatarUrl;
+      }
+
+      _debugLog('Avatar upload response missing avatar_url field');
+      return null;
+    } catch (e) {
+      _debugLog('Error uploading avatar: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete avatar for a user
+  Future<bool> deleteAvatar(int userId) async {
+    try {
+      _debugLog('Deleting avatar for user $userId');
+
+      final response = await _executeWithRetry(
+        () => _api.deleteAvatarUsersUserIdAvatarDelete(userId: userId),
+        'Delete Avatar',
+      );
+
+      // Check response for success indication
+      if (response.data != null) {
+        _debugLog('Avatar deleted successfully: ${response.data}');
+        return true;
+      } else {
+        _debugLog('Avatar delete response was null or empty');
+        return false;
+      }
+    } catch (e) {
+      _debugLog('Error deleting avatar: $e');
+      return false;
+    }
   }
 
   void _debugLog(String message) {
