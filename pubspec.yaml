@@ -44,6 +44,13 @@ dependencies:
   # Image picker and cropper
   image_picker: ^1.1.2
   image_cropper: ^8.0.2
+  
+  # Built collection for API models
+  built_collection: ^5.1.1
+  
+  # Local OpenAPI client
+  openapi:
+    path: gen/openapi
 
 dev_dependencies:
   flutter_test:
