@@ -14,7 +14,16 @@ import 'package:built_value/iso_8601_date_time_serializer.dart';
 import 'package:openapi/src/date_serializer.dart';
 import 'package:openapi/src/model/date.dart';
 
+import 'package:openapi/src/model/activity_create.dart';
+import 'package:openapi/src/model/activity_read.dart';
+import 'package:openapi/src/model/chat_message_create_request.dart';
+import 'package:openapi/src/model/chat_message_read.dart';
+import 'package:openapi/src/model/chat_room_base.dart';
+import 'package:openapi/src/model/chat_room_read.dart';
 import 'package:openapi/src/model/http_validation_error.dart';
+import 'package:openapi/src/model/invitation_create.dart';
+import 'package:openapi/src/model/invitation_read.dart';
+import 'package:openapi/src/model/location_base.dart';
 import 'package:openapi/src/model/location_create.dart';
 import 'package:openapi/src/model/location_read.dart';
 import 'package:openapi/src/model/user_create.dart';
@@ -27,7 +36,16 @@ import 'package:openapi/src/model/validation_error_loc_inner.dart';
 part 'serializers.g.dart';
 
 @SerializersFor([
+  ActivityCreate,
+  ActivityRead,
+  ChatMessageCreateRequest,
+  ChatMessageRead,
+  ChatRoomBase,
+  ChatRoomRead,
   HTTPValidationError,
+  InvitationCreate,
+  InvitationRead,
+  LocationBase,
   LocationCreate,
   LocationRead,
   UserCreate,
@@ -43,8 +61,24 @@ Serializers serializers = (_$serializers.toBuilder()
         () => ListBuilder<UserReadWithDistance>(),
       )
       ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(ActivityRead)]),
+        () => ListBuilder<ActivityRead>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(ChatMessageRead)]),
+        () => ListBuilder<ChatMessageRead>(),
+      )
+      ..addBuilderFactory(
         const FullType(BuiltList, [FullType(LocationRead)]),
         () => ListBuilder<LocationRead>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(InvitationRead)]),
+        () => ListBuilder<InvitationRead>(),
+      )
+      ..addBuilderFactory(
+        const FullType(BuiltList, [FullType(ChatRoomRead)]),
+        () => ListBuilder<ChatRoomRead>(),
       )
       ..addBuilderFactory(
         const FullType(BuiltList, [FullType(UserRead)]),

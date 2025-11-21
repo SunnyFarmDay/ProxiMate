@@ -7,6 +7,41 @@ void main() {
   final instance = Openapi().getDefaultApi();
 
   group(DefaultApi, () {
+    // Accept Invitation
+    //
+    //Future<InvitationRead> acceptInvitationInvitationsInvitationIdAcceptPut(String invitationId) async
+    test('test acceptInvitationInvitationsInvitationIdAcceptPut', () async {
+      // TODO
+    });
+
+    // Collect Name Card
+    //
+    //Future<InvitationRead> collectNameCardInvitationsInvitationIdCollectNameCardPut(String invitationId) async
+    test('test collectNameCardInvitationsInvitationIdCollectNameCardPut', () async {
+      // TODO
+    });
+
+    // Create Activity
+    //
+    //Future<ActivityRead> createActivityActivitiesPost(ActivityCreate activityCreate) async
+    test('test createActivityActivitiesPost', () async {
+      // TODO
+    });
+
+    // Create Chatroom
+    //
+    //Future<ChatRoomRead> createChatroomChatroomsPost(ChatRoomBase chatRoomBase) async
+    test('test createChatroomChatroomsPost', () async {
+      // TODO
+    });
+
+    // Create Invitation
+    //
+    //Future<InvitationRead> createInvitationInvitationsPost(InvitationCreate invitationCreate) async
+    test('test createInvitationInvitationsPost', () async {
+      // TODO
+    });
+
     // Create Location
     //
     //Future<LocationRead> createLocationLocationsPost(LocationCreate locationCreate) async
@@ -21,6 +56,20 @@ void main() {
       // TODO
     });
 
+    // Decline Invitation
+    //
+    //Future<InvitationRead> declineInvitationInvitationsInvitationIdDeclinePut(String invitationId) async
+    test('test declineInvitationInvitationsInvitationIdDeclinePut', () async {
+      // TODO
+    });
+
+    // Delete Activity
+    //
+    //Future<JsonObject> deleteActivityActivitiesActivityIdDelete(String activityId) async
+    test('test deleteActivityActivitiesActivityIdDelete', () async {
+      // TODO
+    });
+
     // Delete Avatar
     //
     //Future<BuiltMap<String, JsonObject>> deleteAvatarUsersUserIdAvatarDelete(int userId) async
@@ -28,10 +77,45 @@ void main() {
       // TODO
     });
 
+    // Get Activities
+    //
+    //Future<BuiltList<ActivityRead>> getActivitiesActivitiesGet() async
+    test('test getActivitiesActivitiesGet', () async {
+      // TODO
+    });
+
     // Get Batch Locations
     //
     //Future<BuiltList<LocationRead>> getBatchLocationsLocationsBatchGet(String userIds) async
     test('test getBatchLocationsLocationsBatchGet', () async {
+      // TODO
+    });
+
+    // Get Chat Messages
+    //
+    //Future<BuiltList<ChatMessageRead>> getChatMessagesChatroomsChatroomIdMessagesGet(String chatroomId) async
+    test('test getChatMessagesChatroomsChatroomIdMessagesGet', () async {
+      // TODO
+    });
+
+    // Get Chatroom
+    //
+    //Future<ChatRoomRead> getChatroomChatroomsChatroomIdGet(String chatroomId) async
+    test('test getChatroomChatroomsChatroomIdGet', () async {
+      // TODO
+    });
+
+    // Get Chatrooms
+    //
+    //Future<BuiltList<ChatRoomRead>> getChatroomsChatroomsGet(int userId) async
+    test('test getChatroomsChatroomsGet', () async {
+      // TODO
+    });
+
+    // Get Invitations
+    //
+    //Future<BuiltList<InvitationRead>> getInvitationsInvitationsGet(int userId) async
+    test('test getInvitationsInvitationsGet', () async {
       // TODO
     });
 
@@ -70,10 +154,38 @@ void main() {
       // TODO
     });
 
+    // Mark Chat Opened
+    //
+    //Future<InvitationRead> markChatOpenedInvitationsInvitationIdChatOpenedPut(String invitationId) async
+    test('test markChatOpenedInvitationsInvitationIdChatOpenedPut', () async {
+      // TODO
+    });
+
+    // Mark Not Good Match
+    //
+    //Future<InvitationRead> markNotGoodMatchInvitationsInvitationIdNotGoodMatchPut(String invitationId) async
+    test('test markNotGoodMatchInvitationsInvitationIdNotGoodMatchPut', () async {
+      // TODO
+    });
+
     // Root
     //
     //Future<JsonObject> rootGet() async
     test('test rootGet', () async {
+      // TODO
+    });
+
+    // Send Chat Message
+    //
+    //Future<ChatMessageRead> sendChatMessageChatroomsChatroomIdMessagesPost(String chatroomId, ChatMessageCreateRequest chatMessageCreateRequest) async
+    test('test sendChatMessageChatroomsChatroomIdMessagesPost', () async {
+      // TODO
+    });
+
+    // Update User Location
+    //
+    //Future<LocationRead> updateUserLocationUsersUserIdLocationPost(int userId, LocationBase locationBase) async
+    test('test updateUserLocationUsersUserIdLocationPost', () async {
       // TODO
     });
 

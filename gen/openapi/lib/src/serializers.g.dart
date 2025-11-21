@@ -7,7 +7,16 @@ part of 'serializers.dart';
 // **************************************************************************
 
 Serializers _$serializers = (Serializers().toBuilder()
+      ..add(ActivityCreate.serializer)
+      ..add(ActivityRead.serializer)
+      ..add(ChatMessageCreateRequest.serializer)
+      ..add(ChatMessageRead.serializer)
+      ..add(ChatRoomBase.serializer)
+      ..add(ChatRoomRead.serializer)
       ..add(HTTPValidationError.serializer)
+      ..add(InvitationCreate.serializer)
+      ..add(InvitationRead.serializer)
+      ..add(LocationBase.serializer)
       ..add(LocationCreate.serializer)
       ..add(LocationRead.serializer)
       ..add(UserCreate.serializer)

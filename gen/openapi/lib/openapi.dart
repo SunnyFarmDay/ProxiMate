@@ -12,7 +12,16 @@ export 'package:openapi/src/model/date.dart';
 
 export 'package:openapi/src/api/default_api.dart';
 
+export 'package:openapi/src/model/activity_create.dart';
+export 'package:openapi/src/model/activity_read.dart';
+export 'package:openapi/src/model/chat_message_create_request.dart';
+export 'package:openapi/src/model/chat_message_read.dart';
+export 'package:openapi/src/model/chat_room_base.dart';
+export 'package:openapi/src/model/chat_room_read.dart';
 export 'package:openapi/src/model/http_validation_error.dart';
+export 'package:openapi/src/model/invitation_create.dart';
+export 'package:openapi/src/model/invitation_read.dart';
+export 'package:openapi/src/model/location_base.dart';
 export 'package:openapi/src/model/location_create.dart';
 export 'package:openapi/src/model/location_read.dart';
 export 'package:openapi/src/model/user_create.dart';

@@ -48,13 +48,13 @@ import 'package:openapi/openapi.dart';
 
 
 final api = Openapi().getDefaultApi();
-final LocationCreate locationCreate = ; // LocationCreate | 
+final String invitationId = invitationId_example; // String | 
 
 try {
-    final response = await api.createLocationLocationsPost(locationCreate);
+    final response = await api.acceptInvitationInvitationsInvitationIdAcceptPut(invitationId);
     print(response);
 } on DioException catch (e) {
-    print("Exception when calling DefaultApi->createLocationLocationsPost: $e\n");
+    print("Exception when calling DefaultApi->acceptInvitationInvitationsInvitationIdAcceptPut: $e\n");
 }
 
 ```
@@ -65,16 +65,32 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+[*DefaultApi*](doc/DefaultApi.md) | [**acceptInvitationInvitationsInvitationIdAcceptPut**](doc/DefaultApi.md#acceptinvitationinvitationsinvitationidacceptput) | **PUT** /invitations/{invitation_id}/accept | Accept Invitation
+[*DefaultApi*](doc/DefaultApi.md) | [**collectNameCardInvitationsInvitationIdCollectNameCardPut**](doc/DefaultApi.md#collectnamecardinvitationsinvitationidcollectnamecardput) | **PUT** /invitations/{invitation_id}/collect-name-card | Collect Name Card
+[*DefaultApi*](doc/DefaultApi.md) | [**createActivityActivitiesPost**](doc/DefaultApi.md#createactivityactivitiespost) | **POST** /activities | Create Activity
+[*DefaultApi*](doc/DefaultApi.md) | [**createChatroomChatroomsPost**](doc/DefaultApi.md#createchatroomchatroomspost) | **POST** /chatrooms | Create Chatroom
+[*DefaultApi*](doc/DefaultApi.md) | [**createInvitationInvitationsPost**](doc/DefaultApi.md#createinvitationinvitationspost) | **POST** /invitations | Create Invitation
 [*DefaultApi*](doc/DefaultApi.md) | [**createLocationLocationsPost**](doc/DefaultApi.md#createlocationlocationspost) | **POST** /locations/ | Create Location
 [*DefaultApi*](doc/DefaultApi.md) | [**createUserUsersPost**](doc/DefaultApi.md#createuseruserspost) | **POST** /users/ | Create User
+[*DefaultApi*](doc/DefaultApi.md) | [**declineInvitationInvitationsInvitationIdDeclinePut**](doc/DefaultApi.md#declineinvitationinvitationsinvitationiddeclineput) | **PUT** /invitations/{invitation_id}/decline | Decline Invitation
+[*DefaultApi*](doc/DefaultApi.md) | [**deleteActivityActivitiesActivityIdDelete**](doc/DefaultApi.md#deleteactivityactivitiesactivityiddelete) | **DELETE** /activities/{activity_id} | Delete Activity
 [*DefaultApi*](doc/DefaultApi.md) | [**deleteAvatarUsersUserIdAvatarDelete**](doc/DefaultApi.md#deleteavatarusersuseridavatardelete) | **DELETE** /users/{user_id}/avatar | Delete Avatar
+[*DefaultApi*](doc/DefaultApi.md) | [**getActivitiesActivitiesGet**](doc/DefaultApi.md#getactivitiesactivitiesget) | **GET** /activities | Get Activities
 [*DefaultApi*](doc/DefaultApi.md) | [**getBatchLocationsLocationsBatchGet**](doc/DefaultApi.md#getbatchlocationslocationsbatchget) | **GET** /locations/batch | Get Batch Locations
+[*DefaultApi*](doc/DefaultApi.md) | [**getChatMessagesChatroomsChatroomIdMessagesGet**](doc/DefaultApi.md#getchatmessageschatroomschatroomidmessagesget) | **GET** /chatrooms/{chatroom_id}/messages | Get Chat Messages
+[*DefaultApi*](doc/DefaultApi.md) | [**getChatroomChatroomsChatroomIdGet**](doc/DefaultApi.md#getchatroomchatroomschatroomidget) | **GET** /chatrooms/{chatroom_id} | Get Chatroom
+[*DefaultApi*](doc/DefaultApi.md) | [**getChatroomsChatroomsGet**](doc/DefaultApi.md#getchatroomschatroomsget) | **GET** /chatrooms | Get Chatrooms
+[*DefaultApi*](doc/DefaultApi.md) | [**getInvitationsInvitationsGet**](doc/DefaultApi.md#getinvitationsinvitationsget) | **GET** /invitations | Get Invitations
 [*DefaultApi*](doc/DefaultApi.md) | [**getNearbyUsersUsersNearbyGet**](doc/DefaultApi.md#getnearbyusersusersnearbyget) | **GET** /users/nearby | Get Nearby Users
 [*DefaultApi*](doc/DefaultApi.md) | [**getUserLocationsLocationsUserIdGet**](doc/DefaultApi.md#getuserlocationslocationsuseridget) | **GET** /locations/{user_id} | Get User Locations
 [*DefaultApi*](doc/DefaultApi.md) | [**getUserUsersUserIdGet**](doc/DefaultApi.md#getuserusersuseridget) | **GET** /users/{user_id} | Get User
 [*DefaultApi*](doc/DefaultApi.md) | [**getUsersUsersGet**](doc/DefaultApi.md#getusersusersget) | **GET** /users/ | Get Users
 [*DefaultApi*](doc/DefaultApi.md) | [**healthCheckHealthGet**](doc/DefaultApi.md#healthcheckhealthget) | **GET** /health | Health Check
+[*DefaultApi*](doc/DefaultApi.md) | [**markChatOpenedInvitationsInvitationIdChatOpenedPut**](doc/DefaultApi.md#markchatopenedinvitationsinvitationidchatopenedput) | **PUT** /invitations/{invitation_id}/chat-opened | Mark Chat Opened
+[*DefaultApi*](doc/DefaultApi.md) | [**markNotGoodMatchInvitationsInvitationIdNotGoodMatchPut**](doc/DefaultApi.md#marknotgoodmatchinvitationsinvitationidnotgoodmatchput) | **PUT** /invitations/{invitation_id}/not-good-match | Mark Not Good Match
 [*DefaultApi*](doc/DefaultApi.md) | [**rootGet**](doc/DefaultApi.md#rootget) | **GET** / | Root
+[*DefaultApi*](doc/DefaultApi.md) | [**sendChatMessageChatroomsChatroomIdMessagesPost**](doc/DefaultApi.md#sendchatmessagechatroomschatroomidmessagespost) | **POST** /chatrooms/{chatroom_id}/messages | Send Chat Message
+[*DefaultApi*](doc/DefaultApi.md) | [**updateUserLocationUsersUserIdLocationPost**](doc/DefaultApi.md#updateuserlocationusersuseridlocationpost) | **POST** /users/{user_id}/location | Update User Location
 [*DefaultApi*](doc/DefaultApi.md) | [**updateUserUsersUserIdPut**](doc/DefaultApi.md#updateuserusersuseridput) | **PUT** /users/{user_id} | Update User
 [*DefaultApi*](doc/DefaultApi.md) | [**uploadAvatarUsersUserIdAvatarPost**](doc/DefaultApi.md#uploadavatarusersuseridavatarpost) | **POST** /users/{user_id}/avatar | Upload Avatar
 [*DefaultApi*](doc/DefaultApi.md) | [**visualizeDbVisualizeGet**](doc/DefaultApi.md#visualizedbvisualizeget) | **GET** /visualize | Visualize Db
@@ -82,7 +98,16 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [ActivityCreate](doc/ActivityCreate.md)
+ - [ActivityRead](doc/ActivityRead.md)
+ - [ChatMessageCreateRequest](doc/ChatMessageCreateRequest.md)
+ - [ChatMessageRead](doc/ChatMessageRead.md)
+ - [ChatRoomBase](doc/ChatRoomBase.md)
+ - [ChatRoomRead](doc/ChatRoomRead.md)
  - [HTTPValidationError](doc/HTTPValidationError.md)
+ - [InvitationCreate](doc/InvitationCreate.md)
+ - [InvitationRead](doc/InvitationRead.md)
+ - [LocationBase](doc/LocationBase.md)
  - [LocationCreate](doc/LocationCreate.md)
  - [LocationRead](doc/LocationRead.md)
  - [UserCreate](doc/UserCreate.md)
