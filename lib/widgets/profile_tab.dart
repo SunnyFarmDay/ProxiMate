@@ -1,11 +1,13 @@
-import 'dart:io';
-import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/storage_service.dart';
+import '../services/storage_service_wrapper.dart';
+import '../services/chat_service.dart';
+import '../services/api_service.dart';
 import '../screens/register_screen.dart';
 import '../screens/edit_profile_screen.dart';
+import '../screens/qr_camera_screen.dart';
+import 'profile_image_picker.dart';
 
 /// Profile tab widget displaying user information
 class ProfileTab extends StatelessWidget {
@@ -20,6 +22,11 @@ class ProfileTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Show / Scan QR Code',
+            onPressed: () => _handleShowQRCode(context),
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: 'Edit Profile',
@@ -42,36 +49,38 @@ class ProfileTab extends StatelessWidget {
                   Center(
                     child: Column(
                       children: [
-                        CircleAvatar(
+                        ProfileImagePicker(
+                          currentImagePath: profile.profileImagePath,
+                          onImageSelected: (avatarUrl) async {
+                            debugPrint(
+                              'ProfileTab: onImageSelected called with avatarUrl: $avatarUrl',
+                            );
+                            final storageService = context
+                                .read<StorageService>();
+
+                            if (avatarUrl != null) {
+                              // Update profile with new avatar URL
+                              debugPrint(
+                                'ProfileTab: Updating profile with new avatar URL',
+                              );
+                              await storageService.updateAvatarOnly(avatarUrl);
+                            } else {
+                              // Remove avatar
+                              debugPrint(
+                                'ProfileTab: Removing avatar from profile',
+                              );
+                              await storageService.updateAvatarOnly(null);
+                            }
+
+                            debugPrint('ProfileTab: Profile update completed');
+                          },
                           radius: 50,
-                          backgroundColor: Theme.of(context).primaryColor,
-                          backgroundImage: profile.profileImagePath != null
-                              ? (kIsWeb
-                                  ? (profile.profileImagePath!.startsWith('data:')
-                                      ? MemoryImage(base64Decode(profile.profileImagePath!.split(',')[1]))
-                                      : NetworkImage(profile.profileImagePath!))
-                                  : FileImage(File(profile.profileImagePath!)))
-                              : null,
-                          child: profile.profileImagePath == null
-                              ? Text(
-                                  profile.userName[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 40,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           profile.userName,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -88,7 +97,12 @@ class ProfileTab extends StatelessWidget {
                     context,
                     icon: Icons.book,
                     title: 'Major',
-                    tags: profile.major?.split(',').map((e) => e.trim()).toList() ?? [],
+                    tags:
+                        profile.major
+                            ?.split(',')
+                            .map((e) => e.trim())
+                            .toList() ??
+                        [],
                     color: Colors.grey,
                   ),
                   const SizedBox(height: 16),
@@ -96,7 +110,12 @@ class ProfileTab extends StatelessWidget {
                     context,
                     icon: Icons.favorite,
                     title: 'Interests',
-                    tags: profile.interests?.split(',').map((e) => e.trim()).toList() ?? [],
+                    tags:
+                        profile.interests
+                            ?.split(',')
+                            .map((e) => e.trim())
+                            .toList() ??
+                        [],
                     color: Colors.grey,
                   ),
                   const SizedBox(height: 16),
@@ -127,26 +146,19 @@ class ProfileTab extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: Theme.of(context).primaryColor,
-                ),
+                Icon(icon, size: 24, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 12),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              content,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            Text(content, style: Theme.of(context).textTheme.bodyLarge),
           ],
         ),
       ),
@@ -154,11 +166,9 @@ class ProfileTab extends StatelessWidget {
   }
 
   void _handleEditProfile(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const EditProfileScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const EditProfileScreen()));
   }
 
   void _handleLogout(BuildContext context) {
@@ -174,7 +184,8 @@ class ProfileTab extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              await context.read<StorageService>().logout();
+              final wrapper = StorageServiceWrapper(context);
+              await wrapper.clearProfile();
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
@@ -189,6 +200,17 @@ class ProfileTab extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _handleShowQRCode(BuildContext context) async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (context) => const QRCameraScreen()),
+    );
+
+    // Handle QR code scanning result
+    if (result != null && result.isNotEmpty) {
+      _handleDeepLink(context, result);
+    }
   }
 
   Widget _buildTagCard(
@@ -207,18 +229,14 @@ class ProfileTab extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: Theme.of(context).primaryColor,
-                ),
+                Icon(icon, size: 24, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 12),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
               ],
             ),
@@ -226,14 +244,16 @@ class ProfileTab extends StatelessWidget {
             tags.isEmpty
                 ? Text(
                     'Not specified',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                   )
                 : Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: tags.map((tag) => _buildTag(context, tag, color)).toList(),
+                    children: tags
+                        .map((tag) => _buildTag(context, tag, color))
+                        .toList(),
                   ),
           ],
         ),
@@ -258,5 +278,63 @@ class ProfileTab extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleDeepLink(BuildContext context, String link) {
+    print('Handling deep link: $link');
+    final uri = Uri.parse(link);
+    if (uri.scheme == 'proximate' && uri.host == 'addConnection') {
+      final targetUserId = uri.queryParameters['id'];
+      if (targetUserId != null && targetUserId.isNotEmpty) {
+        _handleAddConnection(context, targetUserId);
+      }
+    }
+  }
+
+  void _handleAddConnection(BuildContext context, String targetUserId) async {
+    final storage = context.read<StorageService>();
+    final chatService = context.read<ChatService>();
+    final currentUserIdInt = int.tryParse(storage.apiUserId ?? '') ?? 0;
+    final targetId = int.tryParse(targetUserId) ?? 0;
+
+    if (currentUserIdInt == 0 || targetId == 0) {
+      print('Invalid user IDs: current=$currentUserIdInt, target=$targetId');
+      return;
+    }
+
+    try {
+      // Create or get chat room between current user and target user
+      final chatRoom = await chatService.getOrCreateChatRoomBetweenUsers(
+        currentUserIdInt,
+        targetId,
+        '', // No restaurant specified
+      );
+
+      if (chatRoom != null) {
+        // Send connection request
+        final apiService = ApiService();
+        await apiService.createConnectionRequest(
+          chatRoom.id,
+          currentUserIdInt,
+          targetId,
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Connection request sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error adding connection: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add connection: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+1
 
 environment:
   sdk: ^3.9.2
@@ -35,6 +35,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   
+  # QR code generation
+  qr_flutter: ^4.1.0
+  
+  # Deep link handling
+  app_links: ^6.3.0
+  
+  # Camera functionality
+  camera: ^0.10.5+9
+  
+  # QR code scanning
+  mobile_scanner: ^7.1.3
+  
   # State management
   provider: ^6.1.2
   
@@ -44,6 +56,24 @@ dependencies:
   # Image picker and cropper
   image_picker: ^1.1.2
   image_cropper: ^8.0.2
+  
+  # Built collection for API models
+  built_collection: ^5.1.1
+  
+  # HTTP client
+  dio: ^5.7.0
+  
+  # Local OpenAPI client
+  openapi:
+    path: gen/openapi
+  
+  # Location services
+  geolocator: ^10.1.0
+  permission_handler: ^11.3.1
+
+  # Rust-like patterns
+  rust: ^3.1.0
+  anyhow: ^3.0.1
 
 dev_dependencies:
   flutter_test:
