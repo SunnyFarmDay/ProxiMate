@@ -28,4 +28,4 @@ https://docs.docker.com/compose/install/
 docker compose up --build
 ```
 
-5. you can now access the website using the url listed from the terminal.
+5. you can now access the website using the url, http://localhost:8300.
