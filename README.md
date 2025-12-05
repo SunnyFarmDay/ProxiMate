@@ -23,6 +23,20 @@ https://docs.docker.com/compose/install/
 
 2. cd to the project dir
 
+3. For local setup, create a .env file with the following at the root by copy and pasting the .env.sample and rename it to .env
+```
+# ProxiMate Environment Configuration
+# Copy this file to .env and update with your production values
+
+# API Base URL - The backend API endpoint
+# For local development: http://localhost:8000
+# For Docker network: http://backend-service:8000
+# For production: https://api.proximate.app
+API_BASE_URL=http://localhost:8000
+
+# Environment mode
+ENVIRONMENT=production
+```
 4. run this command in terminal:
 ```bash
 docker compose up --build
